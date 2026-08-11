@@ -275,10 +275,10 @@ function cargarNave() {
         (gltf) => {
             nave = gltf.scene;
 
-            // ESCALA ULTRA PEQUEÑA - La nave debe ser como un auto respecto a los planetas
-            const escalaManual = 0.008; // Valor extremadamente pequeño para escala realista
+            // ESCALA ULTRA PEQUEÑA - La nave debe ser mínima, como un punto en el espacio
+            const escalaManual = 0.003; // Escala extremadamente pequeña
             
-            nave.position.set(15, 5, 15); // Muy lejos del centro para evitar superposiciones
+            nave.position.set(15, 5, 15); // Posición inicial lejos del centro
             nave.scale.set(escalaManual, escalaManual, escalaManual);
             nave.renderOrder = 1;
 
@@ -476,9 +476,15 @@ function moverCamaraAPlaneta(indice) {
     const targetPos = new THREE.Vector3(datos.camara.x, datos.camara.y, datos.camara.z);
     const targetLook = new THREE.Vector3(datos.posicion.x, datos.posicion.y, datos.posicion.z);
     
-    // Animación suave de la cámara
+    // Calcular posición de la nave relativa a la cámara (offset constante)
+    const offsetNave = new THREE.Vector3(2, -0.5, 2); // Offset relativo a la cámara
+    
+    // Animación suave de la cámara y la nave
     const startPos = camera.position.clone();
     const startLook = controls.target.clone();
+    const startNavePos = nave ? nave.position.clone() : new THREE.Vector3(15, 5, 15);
+    const targetNavePos = targetPos.clone().add(offsetNave); // La nave sigue a la cámara
+    
     const duration = 2000;
     const startTime = Date.now();
     
@@ -489,6 +495,12 @@ function moverCamaraAPlaneta(indice) {
         
         camera.position.lerpVectors(startPos, targetPos, ease);
         controls.target.lerpVectors(startLook, targetLook, ease);
+        
+        // Mover la nave junto con la cámara
+        if (nave) {
+            nave.position.lerpVectors(startNavePos, targetNavePos, ease);
+        }
+        
         controls.update();
         
         if (progress < 1) {
