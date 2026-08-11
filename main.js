@@ -265,6 +265,10 @@ function crearAsteroides() {
 }
 
 // ===== CARGAR NAVE =====
+let frenteNave = new THREE.Vector3(0, 0, 1); // Dirección del frente (se calcula automáticamente)
+let colaNave = new THREE.Vector3(0, 0, -1); // Dirección de la cola
+let cinematicaCompletada = false;
+
 function cargarNave() {
     const loader = new GLTFLoader();
     const statusText = document.getElementById('loading-status');
@@ -279,9 +283,12 @@ function cargarNave() {
             const escalaManual = 0.0005; // Escala mínima posible
             
             // Posición inicial (se actualizará en cada frame relative a la cámara)
-            nave.position.set(8, 3, 8);
+            nave.position.set(0, 0, 0);
             nave.scale.set(escalaManual, escalaManual, escalaManual);
             nave.renderOrder = 1;
+
+            // Calcular automáticamente el frente y la cola del modelo
+            calcularFrenteYCola(nave);
 
             nave.traverse((child) => {
                 if (child.isMesh && child.material) {
@@ -298,10 +305,11 @@ function cargarNave() {
             scene.add(nave);
             console.log('✅ Nave cargada correctamente');
             console.log('📏 Escala manual aplicada:', escalaManual);
+            console.log('🎯 Frente de la nave:', frenteNave);
+            console.log('🔙 Cola de la nave:', colaNave);
 
-            // Animación de entrada desde arriba
-            nave.scale.set(0, 0, 0);
-            animateEntry(nave);
+            // Iniciar cinemática de introducción
+            iniciarCinematicaIntro();
 
             actualizarBarraCarga(100);
         },
@@ -317,6 +325,108 @@ function cargarNave() {
             crearNaveFallback();
         }
     );
+}
+
+// ===== CALCULAR FRENTE Y COLA DE LA NAVE =====
+function calcularFrenteYCola(naveModelo) {
+    const box = new THREE.Box3().setFromObject(naveModelo);
+    const centro = new THREE.Vector3();
+    box.getCenter(centro);
+    
+    // Encontrar los puntos más extremos en cada eje
+    let maxX = -Infinity, minX = Infinity;
+    let maxY = -Infinity, minY = Infinity;
+    let maxZ = -Infinity, minZ = Infinity;
+    
+    naveModelo.traverse((child) => {
+        if (child.isMesh) {
+            const geo = child.geometry;
+            if (geo && geo.attributes.position) {
+                const positions = geo.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    const vertex = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
+                    vertex.applyMatrix4(child.matrixWorld);
+                    
+                    if (vertex.x > maxX) maxX = vertex.x;
+                    if (vertex.x < minX) minX = vertex.x;
+                    if (vertex.y > maxY) maxY = vertex.y;
+                    if (vertex.y < minY) minY = vertex.y;
+                    if (vertex.z > maxZ) maxZ = vertex.z;
+                    if (vertex.z < minZ) minZ = vertex.z;
+                }
+            }
+        }
+    });
+    
+    // Asumir que el eje más largo es el frente/cola (normalmente Z o X)
+    const largoX = maxX - minX;
+    const largoY = maxY - minY;
+    const largoZ = maxZ - minZ;
+    
+    if (largoZ >= largoX && largoZ >= largoY) {
+        // El eje Z es el más largo
+        frenteNave.set(0, 0, 1);
+        colaNave.set(0, 0, -1);
+        console.log('📐 Eje principal: Z (largo:', largoZ.toFixed(2), ')');
+    } else if (largoX >= largoZ && largoX >= largoY) {
+        // El eje X es el más largo
+        frenteNave.set(1, 0, 0);
+        colaNave.set(-1, 0, 0);
+        console.log('📐 Eje principal: X (largo:', largoX.toFixed(2), ')');
+    } else {
+        // El eje Y es el más largo
+        frenteNave.set(0, 1, 0);
+        colaNave.set(0, -1, 0);
+        console.log('📐 Eje principal: Y (largo:', largoY.toFixed(2), ')');
+    }
+}
+
+// ===== CINEMÁTICA DE INTRODUCCIÓN =====
+function iniciarCinematicaIntro() {
+    if (!nave) return;
+    
+    cinematicaCompletada = false;
+    const duracionTotal = 5000; // 5 segundos
+    const startTime = Date.now();
+    
+    // Posiciones clave para la cinemática
+    const posicionInicial = new THREE.Vector3(5, 3, 5);
+    const posicionMedia = new THREE.Vector3(-5, 2, -5);
+    const posicionFinalDetras = new THREE.Vector3(0, 0.5, 3); // Detrás de la cola
+    
+    function updateCinematica() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duracionTotal, 1);
+        
+        // Interpolación suave entre posiciones
+        let camPos;
+        if (progress < 0.4) {
+            // Primera parte: mostrar la nave completa desde lejos
+            const p1 = progress / 0.4;
+            camPos = posicionInicial.clone().lerp(posicionMedia, p1);
+        } else if (progress < 0.8) {
+            // Segunda parte: acercarse gradualmente
+            const p2 = (progress - 0.4) / 0.4;
+            camPos = posicionMedia.clone().lerp(posicionFinalDetras, p2);
+        } else {
+            // Parte final: posición definitiva detrás de la nave
+            camPos = posicionFinalDetras.clone();
+        }
+        
+        camera.position.copy(camPos);
+        controls.target.set(0, 0, 0); // Mirar al centro donde está la nave
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateCinematica);
+        } else {
+            cinematicaCompletada = true;
+            console.log('🎬 Cinemática completada - Vista desde atrás activada');
+            // Posicionar la nave inicialmente en la misma ubicación que la cámara para el viaje
+            nave.position.copy(camera.position);
+        }
+    }
+    
+    updateCinematica();
 }
 
 // ===== NAVE FALLBACK =====
