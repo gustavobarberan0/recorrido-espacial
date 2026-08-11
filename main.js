@@ -275,10 +275,10 @@ function cargarNave() {
         (gltf) => {
             nave = gltf.scene;
 
-            // ESCALA MANUAL FORZADA - Muy pequeña para que sea un vehículo, no un planeta
-            const escalaManual = 0.05; // Valor fijo muy pequeño
+            // ESCALA ULTRA PEQUEÑA - La nave debe ser como un auto respecto a los planetas
+            const escalaManual = 0.008; // Valor extremadamente pequeño para escala realista
             
-            nave.position.set(8, 2, 8); // Más lejos del centro para evitar superposiciones
+            nave.position.set(15, 5, 15); // Muy lejos del centro para evitar superposiciones
             nave.scale.set(escalaManual, escalaManual, escalaManual);
             nave.renderOrder = 1;
 
