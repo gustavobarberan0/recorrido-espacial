@@ -275,8 +275,21 @@ function cargarNave() {
         (gltf) => {
             nave = gltf.scene;
 
-            nave.position.set(0, 0, 0);
-            nave.scale.set(0.5, 0.5, 0.5);
+            // Calcular bounding box para ajustar escala automáticamente
+            const box = new THREE.Box3().setFromObject(nave);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            
+            // Escalar para que la nave tenga un tamaño razonable (aprox 2 unidades de alto)
+            const maxDimension = Math.max(size.x, size.y, size.z);
+            const targetSize = 2;
+            const autoScale = targetSize / maxDimension;
+            
+            // Aplicar escala base más pequeña para evitar colisiones
+            const finalScale = autoScale * 0.3;
+            
+            nave.position.set(3, 1, 3); // Posición offset - lejos de la Tierra
+            nave.scale.set(finalScale, finalScale, finalScale);
             nave.renderOrder = 1;
 
             nave.traverse((child) => {
@@ -287,12 +300,17 @@ function cargarNave() {
                     child.material.depthTest = true;
                     child.material.side = THREE.FrontSide;
                     child.material.needsUpdate = true;
+                    // Asegurar que la nave se renderice correctamente
+                    child.renderOrder = 1;
                 }
             });
 
             scene.add(nave);
             console.log('✅ Nave cargada correctamente');
+            console.log('📏 Tamaño original:', size);
+            console.log('📏 Escala aplicada:', finalScale);
 
+            // Animación de entrada desde arriba
             nave.scale.set(0, 0, 0);
             animateEntry(nave);
 
@@ -373,8 +391,8 @@ function crearNaveFallback() {
         group.add(engine);
     }
 
-    group.position.set(0, 0, 0);
-    group.scale.set(0.5, 0.5, 0.5);
+    group.position.set(3, 1, 3); // Mismo offset que la nave cargada
+    group.scale.set(0.3, 0.3, 0.3); // Escala reducida para fallback
     scene.add(group);
     nave = group;
 }
