@@ -275,21 +275,11 @@ function cargarNave() {
         (gltf) => {
             nave = gltf.scene;
 
-            // Calcular bounding box para ajustar escala automáticamente
-            const box = new THREE.Box3().setFromObject(nave);
-            const size = new THREE.Vector3();
-            box.getSize(size);
+            // ESCALA MANUAL FORZADA - Muy pequeña para que sea un vehículo, no un planeta
+            const escalaManual = 0.05; // Valor fijo muy pequeño
             
-            // Escalar para que la nave tenga un tamaño razonable (aprox 2 unidades de alto)
-            const maxDimension = Math.max(size.x, size.y, size.z);
-            const targetSize = 2;
-            const autoScale = targetSize / maxDimension;
-            
-            // Aplicar escala base más pequeña para evitar colisiones
-            const finalScale = autoScale * 0.3;
-            
-            nave.position.set(3, 1, 3); // Posición offset - lejos de la Tierra
-            nave.scale.set(finalScale, finalScale, finalScale);
+            nave.position.set(8, 2, 8); // Más lejos del centro para evitar superposiciones
+            nave.scale.set(escalaManual, escalaManual, escalaManual);
             nave.renderOrder = 1;
 
             nave.traverse((child) => {
@@ -300,15 +290,13 @@ function cargarNave() {
                     child.material.depthTest = true;
                     child.material.side = THREE.FrontSide;
                     child.material.needsUpdate = true;
-                    // Asegurar que la nave se renderice correctamente
                     child.renderOrder = 1;
                 }
             });
 
             scene.add(nave);
             console.log('✅ Nave cargada correctamente');
-            console.log('📏 Tamaño original:', size);
-            console.log('📏 Escala aplicada:', finalScale);
+            console.log('📏 Escala manual aplicada:', escalaManual);
 
             // Animación de entrada desde arriba
             nave.scale.set(0, 0, 0);
