@@ -645,4 +645,4 @@ init();
 
 console.log('🚀 RECORRIDO ESPACIAL - Versión Final');
 console.log('🎯 Nave cargada correctamente');
-console.log('💡 Sin efecto warp - Simple y funcional');
+console.log('💡 Sin efecto warp - Simple y funcional');// force deploy trigger Tue Aug 11 23:35:50 UTC 2026
