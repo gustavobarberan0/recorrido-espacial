@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recorrido Espacial</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <!-- ===== OVERLAY DE CARGA ===== -->
+    <div id="loading-overlay">
+        <div class="loader"></div>
+        <h2>🚀 RECORRIDO ESPACIAL</h2>
+        <p>Preparando experiencia inmersiva...</p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <p id="loading-status" style="font-size:0.8rem;margin-top:10px;opacity:0.6;">Iniciando...</p>
+    </div>
+
+    <!-- ===== TÍTULO ===== -->
+    <div id="header">
+        <h1>🚀 RECORRIDO ESPACIAL</h1>
+        <p>Experiencia inmersiva en el espacio</p>
+        <div class="header-line"></div>
+    </div>
+
+    <!-- ===== CONTROLES ===== -->
+    <div id="controls">
+        <button id="btn-noche" title="Modo día/noche">🌙</button>
+        <button id="btn-musica" title="Música ambiental">🎵</button>
+    </div>
+
+    <!-- ===== INDICADOR DE MÚSICA ===== -->
+    <div id="audio-indicator" class="hidden">🎵 Música activa</div>
+
+    <!-- ===== MÚSICA ===== -->
+    <audio id="ambient-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- ===== THREE.JS ===== -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
