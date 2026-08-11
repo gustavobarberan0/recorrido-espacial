@@ -16,6 +16,7 @@ let asteroides = [];
 let camaraObjetivo = new THREE.Vector3(0, 0, 0);
 
 // ===== DATOS DE LOS PLANETAS =====
+// Distancias escaladas para que sean más realistas y la nave pueda viajar entre ellos
 const datosPlanetas = [
     {
         nombre: "TIERRA",
@@ -25,7 +26,7 @@ const datosPlanetas = [
         diametro: "12,742 km",
         temperatura: "15°C",
         posicion: { x: 0, y: 0, z: 0 },
-        camara: { x: 8, y: 3, z: 8 },
+        camara: { x: 25, y: 10, z: 25 },
         color: 0x2266ff
     },
     {
@@ -35,8 +36,8 @@ const datosPlanetas = [
         distancia: "384,400 km (de la Tierra)",
         diametro: "3,474 km",
         temperatura: "-173°C a 127°C",
-        posicion: { x: -15, y: 2, z: -10 },
-        camara: { x: -10, y: 5, z: -5 },
+        posicion: { x: -40, y: 5, z: -30 },
+        camara: { x: -50, y: 15, z: -40 },
         color: 0xaaaaaa
     },
     {
@@ -46,8 +47,8 @@ const datosPlanetas = [
         distancia: "227.9M km",
         diametro: "6,779 km",
         temperatura: "-63°C",
-        posicion: { x: 25, y: -3, z: 15 },
-        camara: { x: 30, y: 2, z: 20 },
+        posicion: { x: 60, y: -8, z: 45 },
+        camara: { x: 75, y: 8, z: 60 },
         color: 0xff4422
     },
     {
@@ -57,8 +58,8 @@ const datosPlanetas = [
         distancia: "2.2-3.2 UA",
         diametro: "Varía",
         temperatura: "-73°C",
-        posicion: { x: -30, y: 5, z: -25 },
-        camara: { x: -25, y: 10, z: -20 },
+        posicion: { x: -80, y: 10, z: -60 },
+        camara: { x: -70, y: 25, z: -55 },
         color: 0x886644
     },
     {
@@ -68,8 +69,8 @@ const datosPlanetas = [
         distancia: "778.5M km",
         diametro: "139,820 km",
         temperatura: "-108°C",
-        posicion: { x: 50, y: -5, z: 40 },
-        camara: { x: 55, y: 5, z: 45 },
+        posicion: { x: 120, y: -15, z: 90 },
+        camara: { x: 140, y: 15, z: 110 },
         color: 0xff8844
     }
 ];
