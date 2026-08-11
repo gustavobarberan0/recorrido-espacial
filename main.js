@@ -275,10 +275,11 @@ function cargarNave() {
         (gltf) => {
             nave = gltf.scene;
 
-            // ESCALA ULTRA PEQUEÑA - La nave debe ser mínima, como un punto en el espacio
-            const escalaManual = 0.003; // Escala extremadamente pequeña
+            // ESCALA EXTREMADAMENTE PEQUEÑA - La nave debe verse como un punto lejano
+            const escalaManual = 0.0005; // Escala mínima posible
             
-            nave.position.set(15, 5, 15); // Posición inicial lejos del centro
+            // Posición inicial (se actualizará en cada frame relative a la cámara)
+            nave.position.set(8, 3, 8);
             nave.scale.set(escalaManual, escalaManual, escalaManual);
             nave.renderOrder = 1;
 
@@ -598,8 +599,22 @@ function animate() {
     requestAnimationFrame(animate);
     const time = performance.now() / 1000;
 
+    // La nave sigue a la cámara con un offset fijo (como si fueras el piloto)
     if (nave) {
-        nave.position.y = Math.sin(time * 0.3) * 0.1;
+        // Offset relativo a la cámara: derecha y abajo de la vista
+        const offset = new THREE.Vector3(2, -0.8, 1.5);
+        
+        // Calcular posición objetivo basada en la cámara actual
+        const targetPos = camera.position.clone().add(offset);
+        
+        // Interpolación suave para que la nave siga a la cámara
+        nave.position.lerp(targetPos, 0.1);
+        
+        // Pequeña oscilación vertical para efecto de flotación
+        nave.position.y += Math.sin(time * 2) * 0.002;
+        
+        // La nave mira en la dirección del movimiento
+        nave.lookAt(camera.position.clone().add(new THREE.Vector3(0, 0, -5)));
     }
 
     // Animar asteroides
