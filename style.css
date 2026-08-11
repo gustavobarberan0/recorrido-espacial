@@ -7,7 +7,7 @@
 body {
     overflow: hidden;
     background: #050510;
-    font-family: 'Georgia', serif;
+    font-family: 'Rajdhani', sans-serif;
     color: #88ccff;
 }
 
@@ -43,11 +43,12 @@ body {
 }
 
 #loading-overlay h2 {
+    font-family: 'Orbitron', sans-serif;
     font-size: 2.5rem;
-    font-weight: 300;
+    font-weight: 700;
     letter-spacing: 8px;
     color: #88ddff;
-    text-shadow: 0 0 40px rgba(68, 170, 255, 0.3);
+    text-shadow: 0 0 40px rgba(68, 170, 255, 0.5), 0 0 80px rgba(68, 170, 255, 0.3);
 }
 
 #loading-overlay p {
@@ -59,18 +60,20 @@ body {
 
 .progress-bar {
     width: 300px;
-    height: 2px;
+    height: 3px;
     background: rgba(68, 170, 255, 0.2);
     border-radius: 2px;
     margin-top: 30px;
     overflow: hidden;
+    box-shadow: 0 0 20px rgba(68, 170, 255, 0.1);
 }
 
 .progress-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #44aaff, #88ddff);
+    background: linear-gradient(90deg, #44aaff, #88ddff, #44aaff);
     transition: width 0.3s ease;
+    box-shadow: 0 0 30px rgba(68, 170, 255, 0.5);
 }
 
 #header {
@@ -81,32 +84,206 @@ body {
     z-index: 10;
     text-align: center;
     pointer-events: none;
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 #header h1 {
-    font-size: 2rem;
-    font-weight: 300;
-    letter-spacing: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 10px;
     color: #88ddff;
-    text-shadow: 0 0 60px rgba(68, 170, 255, 0.3);
+    text-shadow: 0 0 60px rgba(68, 170, 255, 0.4), 0 0 100px rgba(68, 170, 255, 0.2);
 }
 
 #header p {
-    font-size: 0.8rem;
-    opacity: 0.6;
-    letter-spacing: 4px;
-    margin-top: 5px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    opacity: 0.7;
+    letter-spacing: 6px;
+    margin-top: 8px;
     color: #6699cc;
+    text-transform: uppercase;
 }
 
 .header-line {
-    width: 60px;
-    height: 1px;
+    width: 80px;
+    height: 2px;
     background: linear-gradient(90deg, transparent, #44aaff, transparent);
-    margin: 10px auto 0;
+    margin: 15px auto 0;
+    box-shadow: 0 0 20px rgba(68, 170, 255, 0.5);
 }
 
+/* ===== INFO PANEL ===== */
+#info-panel {
+    position: absolute;
+    top: 50%;
+    right: 40px;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: rgba(5, 5, 16, 0.85);
+    backdrop-filter: blur(15px);
+    padding: 30px 35px;
+    border-radius: 20px;
+    border: 1px solid rgba(68, 170, 255, 0.2);
+    box-shadow: 0 0 60px rgba(68, 170, 255, 0.1), inset 0 0 40px rgba(68, 170, 255, 0.05);
+    max-width: 380px;
+    transition: all 0.5s ease;
+}
+
+#info-panel.hidden {
+    opacity: 0;
+    transform: translateY(-50%) translateX(50px);
+    pointer-events: none;
+}
+
+.planet-icon {
+    font-size: 4rem;
+    text-align: center;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 0 30px rgba(68, 170, 255, 0.4));
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+#planet-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    color: #88ddff;
+    text-shadow: 0 0 30px rgba(68, 170, 255, 0.4);
+    letter-spacing: 6px;
+    margin-bottom: 10px;
+}
+
+.planet-line {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #44aaff, transparent);
+    margin: 15px 0;
+    box-shadow: 0 0 10px rgba(68, 170, 255, 0.3);
+}
+
+#planet-description {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #aaccee;
+    opacity: 0.9;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.planet-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: rgba(68, 170, 255, 0.05);
+    border-radius: 10px;
+    border-left: 3px solid #44aaff;
+}
+
+.stat-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem;
+    color: #6699cc;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.95rem;
+    color: #88ddff;
+    font-weight: 600;
+}
+
+/* ===== NAV CONTROLS ===== */
+#nav-controls {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(5, 5, 16, 0.8);
+    backdrop-filter: blur(12px);
+    padding: 15px 25px;
+    border-radius: 50px;
+    border: 1px solid rgba(68, 170, 255, 0.15);
+    box-shadow: 0 0 40px rgba(68, 170, 255, 0.1);
+}
+
+#nav-controls button {
+    padding: 12px 25px;
+    background: rgba(68, 170, 255, 0.08);
+    border: 1px solid rgba(68, 170, 255, 0.2);
+    color: #88ccff;
+    border-radius: 25px;
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+#nav-controls button:hover {
+    background: rgba(68, 170, 255, 0.2);
+    transform: scale(1.05);
+    border-color: #44aaff;
+    box-shadow: 0 0 30px rgba(68, 170, 255, 0.3);
+}
+
+#nav-controls button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.planet-indicators {
+    display: flex;
+    gap: 8px;
+}
+
+.planet-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(68, 170, 255, 0.2);
+    border: 2px solid rgba(68, 170, 255, 0.3);
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.planet-indicator:hover {
+    background: rgba(68, 170, 255, 0.4);
+    transform: scale(1.2);
+}
+
+.planet-indicator.active {
+    background: #44aaff;
+    border-color: #88ddff;
+    box-shadow: 0 0 20px rgba(68, 170, 255, 0.6);
+    transform: scale(1.3);
+}
+
+/* ===== CONTROLES ===== */
 #controls {
     position: absolute;
     bottom: 30px;
@@ -129,22 +306,25 @@ body {
     color: #88ccff;
     border-radius: 25px;
     cursor: pointer;
-    font-family: 'Georgia', serif;
+    font-family: 'Rajdhani', sans-serif;
     font-size: 0.9rem;
+    font-weight: 500;
     transition: all 0.3s;
     min-width: 50px;
+    letter-spacing: 1px;
 }
 
 #controls button:hover {
     background: rgba(68, 170, 255, 0.15);
     transform: scale(1.05);
     border-color: rgba(68, 170, 255, 0.3);
+    box-shadow: 0 0 20px rgba(68, 170, 255, 0.2);
 }
 
 #controls button.activo {
     background: rgba(68, 170, 255, 0.2);
     border-color: #44aaff;
-    box-shadow: 0 0 30px rgba(68, 170, 255, 0.15);
+    box-shadow: 0 0 30px rgba(68, 170, 255, 0.3);
 }
 
 #audio-indicator {
@@ -157,8 +337,10 @@ body {
     padding: 6px 14px;
     border-radius: 20px;
     border: 1px solid rgba(68, 170, 255, 0.1);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    font-family: 'Rajdhani', sans-serif;
     color: #88ccff;
+    letter-spacing: 1px;
     animation: pulse 2s infinite;
 }
 
@@ -172,9 +354,39 @@ body {
 }
 
 @media (max-width: 768px) {
-    #header h1 { font-size: 1.2rem; letter-spacing: 4px; }
-    #header p { font-size: 0.6rem; }
+    #header h1 { font-size: 1.4rem; letter-spacing: 5px; }
+    #header p { font-size: 0.7rem; letter-spacing: 3px; }
+    
+    #info-panel {
+        right: 20px;
+        left: 20px;
+        top: auto;
+        bottom: 180px;
+        transform: none;
+        max-width: none;
+        padding: 20px 25px;
+    }
+    
+    #info-panel.hidden {
+        transform: translateY(50px);
+    }
+    
+    .planet-icon { font-size: 3rem; }
+    #planet-name { font-size: 1.5rem; letter-spacing: 4px; }
+    
+    #nav-controls {
+        bottom: 100px;
+        padding: 12px 18px;
+        gap: 10px;
+    }
+    
+    #nav-controls button {
+        font-size: 0.7rem;
+        padding: 10px 15px;
+    }
+    
     #controls { padding: 10px 14px; gap: 8px; }
-    #controls button { font-size: 0.7rem; padding: 8px 14px; min-width: 40px; }
-    #loading-overlay h2 { font-size: 1.5rem; }
+    #controls button { font-size: 0.75rem; padding: 8px 14px; min-width: 45px; }
+    
+    #loading-overlay h2 { font-size: 1.5rem; letter-spacing: 4px; }
 }

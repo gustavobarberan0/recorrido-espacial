@@ -3,42 +3,74 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recorrido Espacial</title>
+    <title>Viaje Espacial: Tierra a Júpiter</title>
     <link rel="stylesheet" href="style.css" />
+    <!-- Google Fonts para tipografía robótica -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- ===== OVERLAY DE CARGA ===== -->
     <div id="loading-overlay">
         <div class="loader"></div>
-        <h2>🚀 RECORRIDO ESPACIAL</h2>
-        <p>Preparando experiencia inmersiva...</p>
+        <h2>🚀 VIAJE ESPACIAL</h2>
+        <p>De la Tierra a Júpiter</p>
         <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
         </div>
-        <p id="loading-status" style="font-size:0.8rem;margin-top:10px;opacity:0.6;">Iniciando...</p>
+        <p id="loading-status" style="font-size:0.8rem;margin-top:10px;opacity:0.6;">Iniciando sistemas...</p>
     </div>
-
+    
     <!-- ===== TÍTULO ===== -->
     <div id="header">
-        <h1>🚀 RECORRIDO ESPACIAL</h1>
-        <p>Experiencia inmersiva en el espacio</p>
+        <h1>🚀 VIAJE ESPACIAL</h1>
+        <p>De la Tierra a Júpiter</p>
         <div class="header-line"></div>
     </div>
-
+    
+    <!-- ===== INFO PANEL ===== -->
+    <div id="info-panel" class="hidden">
+        <div class="planet-icon" id="planet-icon">🌍</div>
+        <h2 id="planet-name">TIERRA</h2>
+        <div class="planet-line"></div>
+        <p id="planet-description">Nuestro hogar azul, el único planeta conocido con vida.</p>
+        <div class="planet-stats">
+            <div class="stat">
+                <span class="stat-label">Distancia al Sol</span>
+                <span class="stat-value" id="stat-distance">149.6M km</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Diámetro</span>
+                <span class="stat-value" id="stat-diameter">12,742 km</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Temperatura</span>
+                <span class="stat-value" id="stat-temp">15°C</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ===== CONTROLES DE NAVEGACIÓN ===== -->
+    <div id="nav-controls">
+        <button id="btn-prev" title="Planeta anterior">◀ Anterior</button>
+        <div class="planet-indicators" id="planet-indicators"></div>
+        <button id="btn-next" title="Próximo planeta">Siguiente ▶</button>
+    </div>
+    
     <!-- ===== CONTROLES ===== -->
     <div id="controls">
         <button id="btn-noche" title="Modo día/noche">🌙</button>
         <button id="btn-musica" title="Música ambiental">🎵</button>
+        <button id="btn-auto" title="Tour automático">▶ Auto</button>
     </div>
-
+    
     <!-- ===== INDICADOR DE MÚSICA ===== -->
     <div id="audio-indicator" class="hidden">🎵 Música activa</div>
-
+    
     <!-- ===== MÚSICA ===== -->
     <audio id="ambient-music" loop>
         <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
     </audio>
-
+    
     <!-- ===== THREE.JS ===== -->
     <script type="importmap">
         {
