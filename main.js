@@ -8,6 +8,71 @@ let modoNoche = false;
 let musicaActiva = false;
 let nave = null;
 let audioContext = null;
+let tourAutomatico = false;
+let tourInterval = null;
+let planetaActual = 0;
+let planetas = [];
+let asteroides = [];
+let camaraObjetivo = new THREE.Vector3(0, 0, 0);
+
+// ===== DATOS DE LOS PLANETAS =====
+const datosPlanetas = [
+    {
+        nombre: "TIERRA",
+        icono: "🌍",
+        descripcion: "Nuestro hogar azul, el único planeta conocido con vida. Un mundo dinámico con océanos, continentes y una atmósfera protectora.",
+        distancia: "149.6M km",
+        diametro: "12,742 km",
+        temperatura: "15°C",
+        posicion: { x: 0, y: 0, z: 0 },
+        camara: { x: 8, y: 3, z: 8 },
+        color: 0x2266ff
+    },
+    {
+        nombre: "LUNA",
+        icono: "🌙",
+        descripcion: "Nuestro satélite natural. Cubierta de cráteres, sin atmósfera, con temperaturas extremas entre día y noche.",
+        distancia: "384,400 km (de la Tierra)",
+        diametro: "3,474 km",
+        temperatura: "-173°C a 127°C",
+        posicion: { x: -15, y: 2, z: -10 },
+        camara: { x: -10, y: 5, z: -5 },
+        color: 0xaaaaaa
+    },
+    {
+        nombre: "MARTE",
+        icono: "🔴",
+        descripcion: "El planeta rojo. Hogar del volcán más grande del sistema solar, Olympus Mons. Objetivo principal para la exploración humana.",
+        distancia: "227.9M km",
+        diametro: "6,779 km",
+        temperatura: "-63°C",
+        posicion: { x: 25, y: -3, z: 15 },
+        camara: { x: 30, y: 2, z: 20 },
+        color: 0xff4422
+    },
+    {
+        nombre: "CINTURÓN DE ASTEROIDES",
+        icono: "☄️",
+        descripcion: "Región entre Marte y Júpiter llena de millones de asteroides. Restos de la formación del sistema solar.",
+        distancia: "2.2-3.2 UA",
+        diametro: "Varía",
+        temperatura: "-73°C",
+        posicion: { x: -30, y: 5, z: -25 },
+        camara: { x: -25, y: 10, z: -20 },
+        color: 0x886644
+    },
+    {
+        nombre: "JÚPITER",
+        icono: "🟠",
+        descripcion: "El gigante gaseoso. El planeta más grande del sistema solar, con su famosa Gran Mancha Roja y más de 80 lunas.",
+        distancia: "778.5M km",
+        diametro: "139,820 km",
+        temperatura: "-108°C",
+        posicion: { x: 50, y: -5, z: 40 },
+        camara: { x: 55, y: 5, z: 45 },
+        color: 0xff8844
+    }
+];
 
 // ===== INICIALIZACIÓN =====
 function init() {
@@ -16,7 +81,7 @@ function init() {
     scene.fog = null;
 
     camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
-    camera.position.set(10, 5, 15);
+    camera.position.set(8, 3, 8);
 
     renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -41,9 +106,13 @@ function init() {
     setupLighting();
     crearFondoEstrellas();
     cargarNave();
+    crearPlanetas();
+    crearAsteroides();
     setupAudio();
     setupUI();
     setupResponsive();
+    actualizarInfoPanel(0);
+    crearIndicadores();
 
     animate();
 }
@@ -92,7 +161,7 @@ function setupLighting() {
 // ===== FONDO DE ESTRELLAS =====
 function crearFondoEstrellas() {
     const starsGeometry = new THREE.BufferGeometry();
-    const starsCount = 4000;
+    const starsCount = 6000;
     const positions = new Float32Array(starsCount * 3);
     const colors = new Float32Array(starsCount * 3);
 
@@ -125,6 +194,74 @@ function crearFondoEstrellas() {
 
     const stars = new THREE.Points(starsGeometry, starsMaterial);
     scene.add(stars);
+}
+
+// ===== CREAR PLANETAS =====
+function crearPlanetas() {
+    datosPlanetas.forEach((datos, index) => {
+        const geometria = new THREE.SphereGeometry(index === 3 ? 0 : (index === 4 ? 8 : 2), 32, 32);
+        const material = new THREE.MeshStandardMaterial({
+            color: datos.color,
+            metalness: 0.3,
+            roughness: 0.7,
+            emissive: datos.color,
+            emissiveIntensity: 0.2
+        });
+        const planeta = new THREE.Mesh(geometria, material);
+        planeta.position.set(datos.posicion.x, datos.posicion.y, datos.posicion.z);
+        planeta.userData = { esPlaneta: true, indice: index };
+        scene.add(planeta);
+        planetas.push(planeta);
+        
+        // Añadir anillos a Júpiter
+        if (index === 4) {
+            const anilloGeo = new THREE.RingGeometry(9, 12, 64);
+            const anilloMat = new THREE.MeshBasicMaterial({
+                color: 0xcc8866,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.4
+            });
+            const anillo = new THREE.Mesh(anilloGeo, anilloMat);
+            anillo.rotation.x = Math.PI / 2;
+            anillo.position.set(datos.posicion.x, datos.posicion.y, datos.posicion.z);
+            scene.add(anillo);
+        }
+    });
+}
+
+// ===== CREAR ASTEROIDES =====
+function crearAsteroides() {
+    const asteroideGeo = new THREE.DodecahedronGeometry(0.3, 0);
+    const asteroideMat = new THREE.MeshStandardMaterial({
+        color: 0x886644,
+        metalness: 0.5,
+        roughness: 0.9
+    });
+    
+    for (let i = 0; i < 200; i++) {
+        const asteroide = new THREE.Mesh(asteroideGeo, asteroideMat);
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 20 + Math.random() * 15;
+        asteroide.position.set(
+            Math.cos(angle) * radius + datosPlanetas[3].posicion.x,
+            (Math.random() - 0.5) * 8 + datosPlanetas[3].posicion.y,
+            Math.sin(angle) * radius + datosPlanetas[3].posicion.z
+        );
+        asteroide.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        asteroide.userData = { 
+            rotacionSpeed: { 
+                x: (Math.random() - 0.5) * 0.02, 
+                y: (Math.random() - 0.5) * 0.02,
+                z: (Math.random() - 0.5) * 0.02
+            },
+            orbitSpeed: 0.001 + Math.random() * 0.002,
+            orbitAngle: angle,
+            orbitRadius: radius
+        };
+        scene.add(asteroide);
+        asteroides.push(asteroide);
+    }
 }
 
 // ===== CARGAR NAVE =====
@@ -266,6 +403,112 @@ function animateEntry(object) {
 function setupUI() {
     document.getElementById('btn-noche').addEventListener('click', toggleNightMode);
     document.getElementById('btn-musica').addEventListener('click', toggleMusic);
+    document.getElementById('btn-auto').addEventListener('click', toggleTourAutomatico);
+    document.getElementById('btn-prev').addEventListener('click', () => navegarPlaneta(-1));
+    document.getElementById('btn-next').addEventListener('click', () => navegarPlaneta(1));
+}
+
+// ===== NAVEGACIÓN ENTRE PLANETAS =====
+function navegarPlaneta(direccion) {
+    planetaActual += direccion;
+    if (planetaActual < 0) planetaActual = datosPlanetas.length - 1;
+    if (planetaActual >= datosPlanetas.length) planetaActual = 0;
+    
+    actualizarInfoPanel(planetaActual);
+    actualizarIndicadores();
+    moverCamaraAPlaneta(planetaActual);
+}
+
+// ===== ACTUALIZAR INFO PANEL =====
+function actualizarInfoPanel(indice) {
+    const datos = datosPlanetas[indice];
+    document.getElementById('planet-icon').textContent = datos.icono;
+    document.getElementById('planet-name').textContent = datos.nombre;
+    document.getElementById('planet-description').textContent = datos.descripcion;
+    document.getElementById('stat-distance').textContent = datos.distancia;
+    document.getElementById('stat-diameter').textContent = datos.diametro;
+    document.getElementById('stat-temp').textContent = datos.temperatura;
+    
+    // Mostrar panel
+    const panel = document.getElementById('info-panel');
+    panel.classList.remove('hidden');
+    panel.style.opacity = '0';
+    setTimeout(() => {
+        panel.style.transition = 'opacity 0.5s ease';
+        panel.style.opacity = '1';
+    }, 100);
+}
+
+// ===== CREAR INDICADORES =====
+function crearIndicadores() {
+    const container = document.getElementById('planet-indicators');
+    container.innerHTML = '';
+    datosPlanetas.forEach((_, index) => {
+        const indicator = document.createElement('div');
+        indicator.className = 'planet-indicator' + (index === planetaActual ? ' active' : '');
+        indicator.addEventListener('click', () => {
+            planetaActual = index;
+            actualizarInfoPanel(index);
+            actualizarIndicadores();
+            moverCamaraAPlaneta(index);
+        });
+        container.appendChild(indicator);
+    });
+}
+
+// ===== ACTUALIZAR INDICADORES =====
+function actualizarIndicadores() {
+    const indicators = document.querySelectorAll('.planet-indicator');
+    indicators.forEach((ind, index) => {
+        ind.classList.toggle('active', index === planetaActual);
+    });
+}
+
+// ===== MOVER CÁMARA A PLANETA =====
+function moverCamaraAPlaneta(indice) {
+    const datos = datosPlanetas[indice];
+    const targetPos = new THREE.Vector3(datos.camara.x, datos.camara.y, datos.camara.z);
+    const targetLook = new THREE.Vector3(datos.posicion.x, datos.posicion.y, datos.posicion.z);
+    
+    // Animación suave de la cámara
+    const startPos = camera.position.clone();
+    const startLook = controls.target.clone();
+    const duration = 2000;
+    const startTime = Date.now();
+    
+    function animateCamera() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+        
+        camera.position.lerpVectors(startPos, targetPos, ease);
+        controls.target.lerpVectors(startLook, targetLook, ease);
+        controls.update();
+        
+        if (progress < 1) {
+            requestAnimationFrame(animateCamera);
+        }
+    }
+    animateCamera();
+}
+
+// ===== TOUR AUTOMÁTICO =====
+function toggleTourAutomatico() {
+    tourAutomatico = !tourAutomatico;
+    const btn = document.getElementById('btn-auto');
+    
+    if (tourAutomatico) {
+        btn.classList.add('activo');
+        btn.textContent = '⏸ Pausa';
+        navegarPlaneta(1); // Ir al siguiente
+        tourInterval = setInterval(() => {
+            navegarPlaneta(1);
+        }, 8000); // 8 segundos por planeta
+    } else {
+        btn.classList.remove('activo');
+        btn.textContent = '▶ Auto';
+        clearInterval(tourInterval);
+    }
 }
 
 // ===== NOCHE/DÍA =====
@@ -340,6 +583,25 @@ function animate() {
     if (nave) {
         nave.position.y = Math.sin(time * 0.3) * 0.1;
     }
+
+    // Animar asteroides
+    asteroides.forEach(asteroide => {
+        asteroide.rotation.x += asteroide.userData.rotacionSpeed.x;
+        asteroide.rotation.y += asteroide.userData.rotacionSpeed.y;
+        asteroide.rotation.z += asteroide.userData.rotacionSpeed.z;
+        
+        // Órbita suave
+        asteroide.userData.orbitAngle += asteroide.userData.orbitSpeed;
+        asteroide.position.x = Math.cos(asteroide.userData.orbitAngle) * asteroide.userData.orbitRadius + datosPlanetas[3].posicion.x;
+        asteroide.position.z = Math.sin(asteroide.userData.orbitAngle) * asteroide.userData.orbitRadius + datosPlanetas[3].posicion.z;
+    });
+
+    // Rotación suave de planetas
+    planetas.forEach(planeta => {
+        if (planeta.userData.esPlaneta) {
+            planeta.rotation.y += 0.002;
+        }
+    });
 
     controls.update();
     renderer.render(scene, camera);
