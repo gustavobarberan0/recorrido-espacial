@@ -409,30 +409,37 @@
             }
         }
 
-        function loadShip() {
+                function loadShip() {
             const loader = new GLTFLoader();
-            // RUTA EXPLÍCITA SEGÚN TU ESTRUCTURA
             loader.load(
                 './models/nave.glb', 
                 (gltf) => {
                     ship = gltf.scene;
                     
-                    // Escala muy pequeña
-                    const scale = 0.0008; 
+                    // --- CAMBIOS CRÍTICOS PARA VISIBILIDAD ---
+                    
+                    // 1. Escala aumentada drásticamente para pruebas (antes 0.0008)
+                    const scale = 0.008; 
                     ship.scale.set(scale, scale, scale);
                     
-                    // Posición inicial relativa a la cámara (segura)
-                    ship.position.set(0, 0, 0); 
+                    // 2. Posición inicial FORZADA lejos del centro (Arriba y adelante)
+                    // Esto asegura que no nazca dentro de la Tierra (0,0,0)
+                    ship.position.set(0, 20, 10); 
                     
-                    ship.traverse(c => {
-                        if(c.isMesh) {
-                            c.castShadow = true;
-                            c.receiveShadow = true;
+                    // 3. Material de emergencia: Pintar todo de ROJO NEÓN
+                    // Esto ayuda a verla aunque la iluminación del sol no le llegue bien
+                    ship.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            // Descomenta la siguiente línea si aún no la ves, la hará roja brillante
+                            // child.material = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000, metalness: 0.5, roughness: 0.2 });
                         }
                     });
-                    
+
                     scene.add(ship);
-                    console.log("✅ Nave cargada correctamente");
+                    console.log("✅ Nave cargada. Posición:", ship.position, "Escala:", ship.scale);
+                    
                     finishLoading();
                 },
                 (xhr) => {
@@ -442,7 +449,7 @@
                 },
                 (err) => {
                     console.error("❌ Error cargando nave:", err);
-                    ui.status.innerText = "Error cargando modelo. Usando nave básica.";
+                    ui.status.innerText = "Error cargando modelo.";
                     createFallbackShip();
                     finishLoading();
                 }
