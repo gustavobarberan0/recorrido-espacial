@@ -390,10 +390,12 @@ function iniciarCinematicaIntro() {
     const duracionTotal = 5000; // 5 segundos
     const startTime = Date.now();
     
-    // Posiciones clave para la cinemática
-    const posicionInicial = new THREE.Vector3(5, 3, 5);
-    const posicionMedia = new THREE.Vector3(-5, 2, -5);
-    const posicionFinalDetras = new THREE.Vector3(0, 0.5, 3); // Detrás de la cola
+    // Posición inicial de la cámara: lejos para ver toda la nave
+    const posicionInicialCamara = new THREE.Vector3(20, 15, 25);
+    // Posición intermedia: acercándose
+    const posicionMediaCamara = new THREE.Vector3(10, 8, 15);
+    // Posición final: detrás de la nave (la nave está en 0,50,80)
+    const posicionFinalCamara = new THREE.Vector3(0, 48, 85); // Detrás y arriba de la nave
     
     function updateCinematica() {
         const elapsed = Date.now() - startTime;
@@ -404,26 +406,26 @@ function iniciarCinematicaIntro() {
         if (progress < 0.4) {
             // Primera parte: mostrar la nave completa desde lejos
             const p1 = progress / 0.4;
-            camPos = posicionInicial.clone().lerp(posicionMedia, p1);
+            camPos = posicionInicialCamara.clone().lerp(posicionMediaCamara, p1);
         } else if (progress < 0.8) {
             // Segunda parte: acercarse gradualmente
             const p2 = (progress - 0.4) / 0.4;
-            camPos = posicionMedia.clone().lerp(posicionFinalDetras, p2);
+            camPos = posicionMediaCamara.clone().lerp(posicionFinalCamara, p2);
         } else {
             // Parte final: posición definitiva detrás de la nave
-            camPos = posicionFinalDetras.clone();
+            camPos = posicionFinalCamara.clone();
         }
         
         camera.position.copy(camPos);
-        controls.target.set(0, 0, 0); // Mirar al centro donde está la nave
+        controls.target.copy(nave.position); // Mirar hacia la nave
         
         if (progress < 1) {
             requestAnimationFrame(updateCinematica);
         } else {
             cinematicaCompletada = true;
             console.log('🎬 Cinemática completada - Vista desde atrás activada');
-            // Posicionar la nave inicialmente en la misma ubicación que la cámara para el viaje
-            nave.position.copy(camera.position);
+            console.log('📍 Nave posición:', nave.position);
+            console.log('📍 Cámara posición:', camera.position);
         }
     }
     
