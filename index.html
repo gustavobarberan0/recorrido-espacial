@@ -260,6 +260,7 @@
             { name: "JÚPITER", icon: "🟠", desc: "El Rey Gigante. Un monstruo gaseoso con una tormenta eterna.", dist: "778M km", dia: "139,820 km", temp: "-108°C", pos: {x:100, y:-10, z:80}, cam: {x:130, y:20, z:110}, color: 0xff8844 }
         ];
 
+        // Luces de la nave: conservar en conflictos para que el modelo no vuelva a verse oscuro.
         let scene, camera, renderer, controls, ship, clock, shipKeyLight, shipFillLight;
         let currentIdx = 0;
         let isAutoTour = false;
@@ -328,7 +329,7 @@
             createStars();
             createPlanets();
             createAsteroids();
-            createRoutePath();
+            // No crear líneas de ruta: el recorrido queda guiado por la nave y las tarjetas.
             loadShip();
 
             updateUI(0, false);
@@ -377,31 +378,6 @@
 
                 scene.add(mesh);
                 p.mesh = mesh;
-            });
-        }
-
-        function createRoutePath() {
-            const points = PLANETS.map((_, idx) => getShipWaypoint(idx));
-            const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.35);
-            const routeGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(220));
-            const routeMat = new THREE.LineDashedMaterial({
-                color: 0x00f3ff,
-                dashSize: 3,
-                gapSize: 2,
-                transparent: true,
-                opacity: 0.45
-            });
-            const route = new THREE.Line(routeGeo, routeMat);
-            route.computeLineDistances();
-            scene.add(route);
-
-            points.forEach(point => {
-                const marker = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.45, 16, 16),
-                    new THREE.MeshBasicMaterial({ color: 0x00f3ff, transparent: true, opacity: 0.75 })
-                );
-                marker.position.copy(point);
-                scene.add(marker);
             });
         }
 
@@ -458,6 +434,7 @@
                             c.castShadow = true;
                             c.receiveShadow = true;
                             c.frustumCulled = false;
+                            // Mantener este bloque dentro del traverse: ilumina cada material del GLB.
                             const materials = Array.isArray(c.material) ? c.material : [c.material];
                             c.material = materials.map(material => brightenShipMaterial(material));
                             if(c.material.length === 1) c.material = c.material[0];
