@@ -1,269 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viaje a Júpiter - Experiencia Espacial</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
-
-        :root {
-            --primary: #00f3ff;
-            --secondary: #bc13fe;
-            --bg-dark: #050510;
-            --glass: rgba(10, 20, 40, 0.65);
-            --border: rgba(0, 243, 255, 0.3);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-
-        body {
-            overflow: hidden;
-            background-color: var(--bg-dark);
-            font-family: 'Rajdhani', sans-serif;
-            color: white;
-        }
-
-        #canvas-container {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 1;
-        }
-
-        /* UI Overlay */
-        .ui-layer {
-            position: absolute;
-            z-index: 10;
-            pointer-events: none; /* Dejar pasar clicks al 3D salvo en botones */
-            width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 2rem;
-        }
-
-        /* Header */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            pointer-events: auto;
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            text-shadow: 0 0 10px var(--primary);
-            background: linear-gradient(90deg, var(--primary), white);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .controls-top button {
-            background: var(--glass);
-            border: 1px solid var(--border);
-            color: white;
-            padding: 0.5rem 1rem;
-            margin-left: 10px;
-            cursor: pointer;
-            font-family: 'Orbitron';
-            transition: 0.3s;
-            backdrop-filter: blur(5px);
-        }
-
-        .controls-top button:hover {
-            background: var(--primary);
-            color: black;
-            box-shadow: 0 0 15px var(--primary);
-        }
-
-        /* Info Panel */
-        #info-panel {
-            position: absolute;
-            top: 50%;
-            left: 2rem;
-            transform: translateY(-50%);
-            width: 320px;
-            background: var(--glass);
-            border: 1px solid var(--border);
-            padding: 2rem;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            pointer-events: auto;
-            transition: opacity 0.5s ease, transform 0.5s ease;
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
-        }
-
-        #info-panel.hidden {
-            opacity: 0;
-            transform: translateY(-40%) translateX(-20px);
-            pointer-events: none;
-        }
-
-        .planet-icon { font-size: 3rem; margin-bottom: 0.5rem; display: block; }
-        .planet-name { font-family: 'Orbitron'; font-size: 2rem; color: var(--primary); margin-bottom: 1rem; text-transform: uppercase; }
-        .planet-desc { font-size: 1.1rem; line-height: 1.5; margin-bottom: 1.5rem; color: #ddd; }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            border-top: 1px solid var(--border);
-            padding-top: 1rem;
-        }
-        .stat-item label { font-size: 0.8rem; color: var(--primary); display: block; }
-        .stat-item span { font-size: 1.1rem; font-weight: bold; }
-
-        /* Navigation Controls */
-        .nav-controls {
-            position: absolute;
-            bottom: 2rem;
-            right: 2rem;
-            display: flex;
-            gap: 1rem;
-            pointer-events: auto;
-            align-items: center;
-        }
-
-        .nav-btn {
-            width: 60px; height: 60px;
-            border-radius: 50%;
-            border: 2px solid var(--primary);
-            background: var(--glass);
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        .nav-btn:hover {
-            background: var(--primary);
-            color: black;
-            transform: scale(1.1);
-        }
-
-        .indicators {
-            display: flex;
-            gap: 8px;
-        }
-
-        .dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.3);
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .dot.active { background: var(--primary); box-shadow: 0 0 10px var(--primary); transform: scale(1.3); }
-
-        /* Loading Screen */
-        #loading-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 1s ease;
-        }
-        .loader-bar {
-            width: 300px; height: 4px;
-            background: #333;
-            margin-top: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        .loader-progress {
-            position: absolute;
-            top: 0; left: 0; height: 100%;
-            background: var(--primary);
-            width: 0%;
-            transition: width 0.2s;
-            box-shadow: 0 0 10px var(--primary);
-        }
-        .loading-text {
-            font-family: 'Orbitron';
-            letter-spacing: 2px;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            #info-panel { width: 90%; top: auto; bottom: 120px; left: 5%; transform: none; }
-            #info-panel.hidden { transform: translateY(20px); }
-            h1 { font-size: 1rem; }
-            .nav-controls { bottom: 1rem; right: 1rem; }
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Loading Screen -->
-    <div id="loading-screen">
-        <h2 class="loading-text">INICIALIZANDO SISTEMAS...</h2>
-        <div class="loader-bar"><div class="loader-progress" id="progress"></div></div>
-        <p style="margin-top:10px; color:#666; font-size:0.8rem" id="load-status">Cargando modelos 3D</p>
-    </div>
-
-    <!-- 3D Canvas -->
-    <div id="canvas-container"></div>
-
-    <!-- UI Layer -->
-    <div class="ui-layer">
-        <header>
-            <h1>MISIÓN: JÚPITER</h1>
-            <div class="controls-top">
-                <button onclick="toggleAutoTour()" id="btn-auto">▶ AUTO</button>
-                <button onclick="toggleMusic()" id="btn-music">🎵</button>
-            </div>
-        </header>
-
-        <div id="info-panel">
-            <span class="planet-icon" id="p-icon">🌍</span>
-            <h2 class="planet-name" id="p-name">TIERRA</h2>
-            <p class="planet-desc" id="p-desc">Nuestro hogar. El punto de partida de esta increíble travesía interestelar.</p>
-            <div class="stats-grid">
-                <div class="stat-item"><label>DISTANCIA</label><span id="s-dist">0 km</span></div>
-                <div class="stat-item"><label>DIÁMETRO</label><span id="s-dia">12,742 km</span></div>
-                <div class="stat-item"><label>TEMP</label><span id="s-temp">15°C</span></div>
-                <div class="stat-item"><label>TIPO</label><span>Rocoso</span></div>
-            </div>
-        </div>
-
-        <div class="nav-controls">
-            <div class="indicators" id="indicators"></div>
-            <button class="nav-btn" onclick="changePlanet(-1)">❮</button>
-            <button class="nav-btn" onclick="changePlanet(1)">❯</button>
-        </div>
-    </div>
-
-    <!-- Audio (Opcional, reemplaza src si tienes archivo) -->
-    <audio id="bg-music" loop>
-        <source src="" type="audio/mp3">
-    </audio>
-
-    <!-- Three.js from CDN -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
-
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // --- CONFIGURACIÓN ---
         const PLANETS = [
             { name: "TIERRA", icon: "🌍", desc: "Nuestro hogar azul. Desde aquí comienza la humanidad su expansión hacia las estrellas.", dist: "0 km", dia: "12,742 km", temp: "15°C", pos: {x:0, y:0, z:0}, cam: {x:25, y:10, z:25}, color: 0x2266ff },
             { name: "LUNA", icon: "🌙", desc: "Nuestro fiel satélite. El primer paso del hombre fuera de la Tierra.", dist: "384,400 km", dia: "3,474 km", temp: "-173°C", pos: {x:-30, y:5, z:-20}, cam: {x:-40, y:10, z:-30}, color: 0xaaaaaa },
@@ -278,9 +17,11 @@
         let tourInterval;
         let asteroids = [];
         let stars;
-        let cinematicMode = true; // Empieza en modo cine
+        let cinematicMode = true;
 
-        // Elementos DOM
+        // Offset fijo para que la nave siempre esté a la derecha-abajo de la cámara
+        const SHIP_OFFSET = new THREE.Vector3(3, -1.5, 4); 
+
         const ui = {
             panel: document.getElementById('info-panel'),
             name: document.getElementById('p-name'),
@@ -296,16 +37,14 @@
         };
 
         function init() {
-            // Escena
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x050510);
             scene.fog = new THREE.FogExp2(0x050510, 0.015);
 
-            // Cámara
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 10); // Posición inicial segura
+            // Posición inicial segura
+            camera.position.set(0, 5, 10);
 
-            // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -313,14 +52,12 @@
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            // Controles
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.maxDistance = 100;
             controls.minDistance = 2;
 
-            // Luces
             const ambient = new THREE.AmbientLight(0x404040, 2);
             scene.add(ambient);
             
@@ -331,17 +68,14 @@
             sun.shadow.mapSize.height = 2048;
             scene.add(sun);
 
-            // Objetos
             createStars();
             createPlanets();
             createAsteroids();
             loadShip();
 
-            // UI Inicial
             updateUI(0);
             createIndicators();
 
-            // Eventos
             window.addEventListener('resize', onResize);
             
             animate();
@@ -360,7 +94,7 @@
 
         function createPlanets() {
             PLANETS.forEach((p, i) => {
-                const radius = i === 4 ? 12 : (i === 3 ? 0.5 : 3); // Júpiter grande, Cinturón pequeño centro
+                const radius = i === 4 ? 12 : (i === 3 ? 0.5 : 3);
                 const geo = new THREE.SphereGeometry(radius, 64, 64);
                 const mat = new THREE.MeshStandardMaterial({ 
                     color: p.color, 
@@ -374,7 +108,6 @@
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
                 
-                // Anillos para Júpiter (simulado)
                 if(i === 4) {
                     const ringGeo = new THREE.RingGeometry(13, 18, 64);
                     const ringMat = new THREE.MeshBasicMaterial({ color: 0xccaa88, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
@@ -385,7 +118,7 @@
                 }
 
                 scene.add(mesh);
-                p.mesh = mesh; // Guardar referencia
+                p.mesh = mesh;
             });
         }
 
@@ -409,37 +142,32 @@
             }
         }
 
-                function loadShip() {
+        function loadShip() {
             const loader = new GLTFLoader();
             loader.load(
                 './models/nave.glb', 
                 (gltf) => {
                     ship = gltf.scene;
                     
-                    // --- CAMBIOS CRÍTICOS PARA VISIBILIDAD ---
-                    
-                    // 1. Escala aumentada drásticamente para pruebas (antes 0.0008)
-                    const scale = 0.008; 
+                    // ESCALA AUMENTADA PARA VISIBILIDAD (0.003 en vez de 0.0008)
+                    const scale = 0.003; 
                     ship.scale.set(scale, scale, scale);
                     
-                    // 2. Posición inicial FORZADA lejos del centro (Arriba y adelante)
-                    // Esto asegura que no nazca dentro de la Tierra (0,0,0)
-                    ship.position.set(0, 20, 10); 
+                    // POSICIÓN INICIAL CRÍTICA:
+                    // La colocamos inmediatamente detrás de la cámara actual para evitar el "salto"
+                    ship.position.copy(camera.position).add(SHIP_OFFSET);
                     
-                    // 3. Material de emergencia: Pintar todo de ROJO NEÓN
-                    // Esto ayuda a verla aunque la iluminación del sol no le llegue bien
-                    ship.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                            // Descomenta la siguiente línea si aún no la ves, la hará roja brillante
-                            // child.material = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x550000, metalness: 0.5, roughness: 0.2 });
+                    ship.traverse(c => {
+                        if(c.isMesh) {
+                            c.castShadow = true;
+                            c.receiveShadow = true;
+                            // Asegurar que se renderice bien
+                            c.material.depthWrite = true; 
                         }
                     });
-
-                    scene.add(ship);
-                    console.log("✅ Nave cargada. Posición:", ship.position, "Escala:", ship.scale);
                     
+                    scene.add(ship);
+                    console.log("✅ Nave cargada y posicionada correctamente");
                     finishLoading();
                 },
                 (xhr) => {
@@ -449,7 +177,7 @@
                 },
                 (err) => {
                     console.error("❌ Error cargando nave:", err);
-                    ui.status.innerText = "Error cargando modelo.";
+                    ui.status.innerText = "Error cargando modelo. Usando nave básica.";
                     createFallbackShip();
                     finishLoading();
                 }
@@ -458,10 +186,12 @@
 
         function createFallbackShip() {
             const group = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x004444}));
+            const body = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshStandardMaterial({color: 0xff0000, emissive: 0x550000}));
             body.rotation.x = Math.PI/2;
             group.add(body);
             group.scale.set(0.5, 0.5, 0.5);
+            // Posición inicial igual
+            group.position.copy(camera.position).add(SHIP_OFFSET);
             scene.add(group);
             ship = group;
         }
@@ -477,20 +207,30 @@
         function startCinematic() {
             cinematicMode = true;
             const startPos = camera.position.clone();
-            const targetPos = new THREE.Vector3(0, 5, 15); // Detrás de la nave
+            const targetPos = new THREE.Vector3(0, 5, 15);
             
             let t = 0;
             function anim() {
                 t += 0.01;
                 if(t < 1) {
-                    // Movimiento suave de curva
                     const ease = 1 - Math.pow(1-t, 3);
                     camera.position.lerpVectors(startPos, targetPos, ease);
+                    
+                    // Mover la nave CON la cámara durante la cinemática
+                    if(ship) {
+                        const currentOffset = new THREE.Vector3(0, 0, 10); // Un poco más lejos para verla
+                        const idealPos = camera.position.clone().add(currentOffset);
+                        ship.position.lerp(idealPos, 0.1);
+                        ship.lookAt(camera.position);
+                    }
+
                     controls.target.set(0,0,0);
                     controls.update();
                     requestAnimationFrame(anim);
                 } else {
                     cinematicMode = false;
+                    // Asegurar posición final correcta al terminar cinemática
+                    if(ship) ship.position.copy(camera.position).add(SHIP_OFFSET);
                 }
             }
             anim();
@@ -505,11 +245,9 @@
             ui.sDia.innerText = p.dia;
             ui.sTemp.innerText = p.temp;
             
-            // Animación panel
             ui.panel.classList.add('hidden');
             setTimeout(() => ui.panel.classList.remove('hidden'), 500);
 
-            // Dots
             document.querySelectorAll('.dot').forEach((d, i) => {
                 d.classList.toggle('active', i === idx);
             });
@@ -540,23 +278,28 @@
             const camTarget = target.cam;
             const planetPos = target.pos;
 
-            // Mover cámara
             const startCam = camera.position.clone();
             const endCam = new THREE.Vector3(camTarget.x, camTarget.y, camTarget.z);
             
-            // Mover nave con la cámara (offset relativo)
-            const shipOffset = new THREE.Vector3(2, -1, 3); 
+            // La nave viaja con la cámara manteniendo el offset
             const startShip = ship ? ship.position.clone() : new THREE.Vector3();
-            const endShip = endCam.clone().add(shipOffset);
+            const endShip = endCam.clone().add(SHIP_OFFSET);
 
             let t = 0;
             function fly() {
-                t += 0.015; // Velocidad de viaje
+                t += 0.015;
                 if(t < 1) {
                     const ease = 1 - Math.pow(1-t, 3);
                     camera.position.lerpVectors(startCam, endCam, ease);
                     controls.target.lerp(new THREE.Vector3(planetPos.x, planetPos.y, planetPos.z), ease);
-                    if(ship) ship.position.lerpVectors(startShip, endShip, ease);
+                    
+                    if(ship) {
+                        // Interpolación muy suave para que no tiemble
+                        ship.position.lerpVectors(startShip, endShip, ease);
+                        // Opcional: Que mire siempre al frente del movimiento
+                        // ship.lookAt(endCam); 
+                    }
+                    
                     controls.update();
                     requestAnimationFrame(fly);
                 }
@@ -606,10 +349,8 @@
             
             const time = Date.now() * 0.001;
 
-            // Rotación planetas
             PLANETS.forEach(p => { if(p.mesh) p.mesh.rotation.y += 0.001; });
 
-            // Asteroides
             asteroids.forEach(a => {
                 a.rotation.x += a.userData.rot.x;
                 a.rotation.y += a.userData.rot.y;
@@ -618,21 +359,19 @@
                 a.position.z = Math.sin(a.userData.angle) * a.userData.radius + PLANETS[3].pos.z;
             });
 
-            // Lógica de la Nave
-            if(ship && !cinematicMode) {
-                // La nave sigue a la cámara suavemente con un offset
-                const offset = new THREE.Vector3(2, -0.8, 2.5);
-                const targetPos = camera.position.clone().add(offset);
-                ship.position.lerp(targetPos, 0.1);
-                
-                // Vibración de motor
-                ship.position.y += Math.sin(time * 20) * 0.02;
-                
-                // Orientación: mirar hacia adelante (donde mira la cámara)
-                const lookAtPos = camera.position.clone().add(new THREE.Vector3(0, 0, -10).applyQuaternion(camera.quaternion));
-                ship.lookAt(lookAtPos);
-            } else if (ship && cinematicMode) {
-                ship.rotation.z = Math.sin(time) * 0.1; // Flotar en intro
+            if(ship) {
+                if (!cinematicMode) {
+                    // MODO NORMAL: La nave sigue a la cámara con offset fijo
+                    const targetPos = camera.position.clone().add(SHIP_OFFSET);
+                    ship.position.lerp(targetPos, 0.15); // Suavizado
+                    
+                    // Pequeña vibración de motor
+                    ship.position.y += Math.sin(time * 20) * 0.02;
+                    
+                    // Orientación: Mirar hacia donde mira la cámara
+                    const lookTarget = camera.position.clone().add(new THREE.Vector3(0, 0, -10).applyQuaternion(camera.quaternion));
+                    ship.lookAt(lookTarget);
+                }
             }
 
             controls.update();
@@ -641,5 +380,3 @@
 
         init();
     </script>
-</body>
-</html>
