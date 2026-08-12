@@ -283,8 +283,8 @@ function cargarNave() {
             // ESCALA EXTREMADAMENTE PEQUEÑA - La nave debe verse como un punto lejano
             const escalaManual = 0.0005; // Escala mínima posible
             
-            // Posición inicial (se actualizará en cada frame relative a la cámara)
-            nave.position.set(0, 0, 0);
+            // Posición inicial SEGURA: muy por encima de la Tierra para no estar dentro del planeta
+            nave.position.set(0, 50, 80); // Coordenadas seguras lejos del centro (0,0,0)
             nave.scale.set(escalaManual, escalaManual, escalaManual);
             nave.renderOrder = 1;
 
