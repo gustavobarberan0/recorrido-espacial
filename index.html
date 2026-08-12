@@ -238,7 +238,7 @@
         <source src="" type="audio/mp3">
     </audio>
 
-    <!-- USAMOS IMPORTS DIRECTOS PARA EVITAR ERRORES DE RESOLUCIÓN -->
+    <!-- CORRECCIÓN CLAVE: Usamos rutas URL completas en los imports dentro del script -->
     <script type="module">
         import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
         import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
@@ -259,6 +259,7 @@
         let asteroids = [];
         let stars;
         let cinematicMode = true;
+        let shipVisible = false; // Bandera para saber si ya tenemos nave
 
         const ui = {
             panel: document.getElementById('info-panel'),
@@ -310,9 +311,10 @@
             createPlanets();
             createAsteroids();
             
-            // Creamos la nave fallback INMEDIATAMENTE para evitar pantalla blanca o saltos
+            // Creamos una nave fallback INMEDIATAMENTE para evitar saltos y pantalla vacía
             createFallbackShip(); 
-            loadShip(); // Intentamos cargar la real después
+            
+            loadShip();
 
             updateUI(0);
             createIndicators();
@@ -383,21 +385,25 @@
             }
         }
 
+        // Nave Fallback inmediata (geométrica)
         function createFallbackShip() {
-            // Si la nave real tarda, esta asegura que haya algo visible desde el frame 1
             const group = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x004444}));
+            const body = new THREE.Mesh(
+                new THREE.ConeGeometry(1, 2, 8), 
+                new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x004444, metalness: 0.5})
+            );
             body.rotation.x = Math.PI/2;
             group.add(body);
             
-            // POSICIÓN INICIAL EXACTA DE LA CÁMARA + OFFSET
+            // Posición inicial EXACTA relativa a la cámara para evitar saltos
             const offset = new THREE.Vector3(2, -1, 2);
             group.position.copy(camera.position).add(offset);
             
             group.scale.set(0.5, 0.5, 0.5);
             scene.add(group);
             ship = group;
-            console.log("🚀 Nave Fallback creada y posicionada.");
+            shipVisible = true;
+            console.log("✅ Nave fallback creada y posicionada.");
         }
 
         function loadShip() {
@@ -405,27 +411,28 @@
             loader.load(
                 './models/nave.glb', 
                 (gltf) => {
-                    // Reemplazamos la fallback por la real
-                    if(ship && ship.children.length > 0 && ship.children[0].geometry.type === 'ConeGeometry') {
-                        scene.remove(ship);
-                    }
-                    
-                    ship = gltf.scene;
+                    const newShip = gltf.scene;
                     const scale = 0.003; 
-                    ship.scale.set(scale, scale, scale);
+                    newShip.scale.set(scale, scale, scale);
                     
-                    // CLAVE: Posicionarla exactamente donde está la cámara ahora + offset
-                    const offset = new THREE.Vector3(2, -1, 2);
-                    ship.position.copy(camera.position).add(offset);
-
-                    ship.traverse(c => {
+                    // Posicionar la nueva nave EXACTAMENTE donde está la fallback
+                    newShip.position.copy(ship.position);
+                    newShip.rotation.copy(ship.rotation);
+                    
+                    newShip.traverse(c => {
                         if(c.isMesh) {
                             c.castShadow = true;
                             c.receiveShadow = true;
                         }
                     });
-                    scene.add(ship);
-                    console.log("✅ Nave Real cargada y sincronizada.");
+                    
+                    scene.add(newShip);
+                    
+                    // Eliminar la fallback y asignar la nueva
+                    scene.remove(ship);
+                    ship = newShip;
+                    
+                    console.log("✅ Nave GLB cargada y reemplazada sin saltos.");
                     finishLoading();
                 },
                 (xhr) => {
@@ -434,7 +441,8 @@
                     ui.status.innerText = `Cargando nave: ${Math.round(pct)}%`;
                 },
                 (err) => {
-                    console.warn("⚠️ Error cargando nave real, usamos la fallback.", err);
+                    console.warn("⚠️ Error cargando nave GLB, manteniendo fallback.", err);
+                    ui.status.innerText = "Modelo no encontrado. Usando nave básica.";
                     finishLoading();
                 }
             );
@@ -514,7 +522,7 @@
             const startCam = camera.position.clone();
             const endCam = new THREE.Vector3(camTarget.x, camTarget.y, camTarget.z);
             
-            // Calculamos la posición FINAL de la nave
+            // La nave viaja con la cámara manteniendo el offset
             const shipOffset = new THREE.Vector3(2, -1, 2); 
             const startShip = ship ? ship.position.clone() : new THREE.Vector3();
             const endShip = endCam.clone().add(shipOffset);
@@ -526,12 +534,7 @@
                     const ease = 1 - Math.pow(1-t, 3);
                     camera.position.lerpVectors(startCam, endCam, ease);
                     controls.target.lerp(new THREE.Vector3(planetPos.x, planetPos.y, planetPos.z), ease);
-                    
-                    if(ship) {
-                        // La nave se mueve EXACTAMENTE igual que la cámara
-                        ship.position.lerpVectors(startShip, endShip, ease);
-                    }
-                    
+                    if(ship) ship.position.lerpVectors(startShip, endShip, ease);
                     controls.update();
                     requestAnimationFrame(fly);
                 }
@@ -591,21 +594,17 @@
                 a.position.z = Math.sin(a.userData.angle) * a.userData.radius + PLANETS[3].pos.z;
             });
 
-            if(ship) {
+            if(ship && shipVisible) {
                 if(cinematicMode) {
                     ship.rotation.z = Math.sin(time) * 0.1;
                 } else {
-                    // MODO SEGUIMIENTO: La nave sigue a la cámara con un offset fijo
+                    // Lógica de seguimiento suave
                     const offset = new THREE.Vector3(2, -1, 2);
                     const targetPos = camera.position.clone().add(offset);
-                    
-                    // Interpolación muy suave (0.1) para que no tiemble
                     ship.position.lerp(targetPos, 0.1);
                     
-                    // Pequeña vibración de motor
-                    ship.position.y += Math.sin(time * 20) * 0.02;
+                    ship.position.y += Math.sin(time * 20) * 0.02; // Vibración motor
                     
-                    // Orientar la nave hacia donde mira la cámara
                     const lookAtPos = camera.position.clone().add(new THREE.Vector3(0, 0, -10).applyQuaternion(camera.quaternion));
                     ship.lookAt(lookAtPos);
                 }
@@ -616,6 +615,7 @@
         }
 
         init();
+        console.log("🚀 Sistema iniciado correctamente.");
     </script>
 </body>
 </html>
