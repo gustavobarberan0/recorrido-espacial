@@ -328,6 +328,7 @@
             createStars();
             createPlanets();
             createAsteroids();
+            createRoutePath();
             loadShip();
 
             updateUI(0, false);
@@ -376,6 +377,31 @@
 
                 scene.add(mesh);
                 p.mesh = mesh;
+            });
+        }
+
+        function createRoutePath() {
+            const points = PLANETS.map((_, idx) => getShipWaypoint(idx));
+            const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.35);
+            const routeGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(220));
+            const routeMat = new THREE.LineDashedMaterial({
+                color: 0x00f3ff,
+                dashSize: 3,
+                gapSize: 2,
+                transparent: true,
+                opacity: 0.45
+            });
+            const route = new THREE.Line(routeGeo, routeMat);
+            route.computeLineDistances();
+            scene.add(route);
+
+            points.forEach(point => {
+                const marker = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.45, 16, 16),
+                    new THREE.MeshBasicMaterial({ color: 0x00f3ff, transparent: true, opacity: 0.75 })
+                );
+                marker.position.copy(point);
+                scene.add(marker);
             });
         }
 
