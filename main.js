@@ -82,7 +82,8 @@ function init() {
     scene.fog = null;
 
     camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
-    camera.position.set(8, 3, 8);
+    // Cámara inicial posicionada PARA VER LA NAVE desde atrás (la nave está en 0,100,200)
+    camera.position.set(0, 98, 210);
 
     renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -283,8 +284,9 @@ function cargarNave() {
             // ESCALA EXTREMADAMENTE PEQUEÑA - La nave debe verse como un punto lejano
             const escalaManual = 0.0005; // Escala mínima posible
             
-            // Posición inicial SEGURA: muy por encima de la Tierra para no estar dentro del planeta
-            nave.position.set(0, 50, 80); // Coordenadas seguras lejos del centro (0,0,0)
+            // Posición inicial SEGURA: MUY por encima de la Tierra para no estar dentro del planeta
+            // La Tierra está en (0,0,0) con radio 2, así que ponemos la nave muy lejos
+            nave.position.set(0, 100, 200); // Coordenadas muy seguras, visibles desde lejos
             nave.scale.set(escalaManual, escalaManual, escalaManual);
             nave.renderOrder = 1;
 
@@ -390,12 +392,12 @@ function iniciarCinematicaIntro() {
     const duracionTotal = 5000; // 5 segundos
     const startTime = Date.now();
     
-    // Posición inicial de la cámara: lejos para ver toda la nave
-    const posicionInicialCamara = new THREE.Vector3(20, 15, 25);
-    // Posición intermedia: acercándose
-    const posicionMediaCamara = new THREE.Vector3(10, 8, 15);
-    // Posición final: detrás de la nave (la nave está en 0,50,80)
-    const posicionFinalCamara = new THREE.Vector3(0, 48, 85); // Detrás y arriba de la nave
+    // Posición inicial de la cámara: lejos para ver toda la nave (la nave está en 0,100,200)
+    const posicionInicialCamara = new THREE.Vector3(0, 95, 220);
+    // Posición intermedia: acercándose gradualmente
+    const posicionMediaCamara = new THREE.Vector3(0, 98, 210);
+    // Posición final: detrás de la nave mirando hacia el frente
+    const posicionFinalCamara = new THREE.Vector3(0, 98, 205); // Detrás de la nave
     
     function updateCinematica() {
         const elapsed = Date.now() - startTime;
