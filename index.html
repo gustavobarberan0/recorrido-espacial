@@ -330,7 +330,7 @@
             createAsteroids();
             loadShip();
 
-            updateUI(0);
+            updateUI(0, false);
             createIndicators();
 
             window.addEventListener('resize', onResize);
@@ -532,7 +532,7 @@
             requestAnimationFrame(anim);
         }
 
-        function updateUI(idx) {
+        function updateUI(idx, showPanel = true) {
             const p = PLANETS[idx];
             ui.name.innerText = p.name;
             ui.icon.innerText = p.icon;
@@ -542,7 +542,9 @@
             ui.sTemp.innerText = p.temp;
             
             ui.panel.classList.add('hidden');
-            setTimeout(() => ui.panel.classList.remove('hidden'), 500);
+            if(showPanel) {
+                setTimeout(() => ui.panel.classList.remove('hidden'), 500);
+            }
 
             document.querySelectorAll('.dot').forEach((d, i) => {
                 d.classList.toggle('active', i === idx);
