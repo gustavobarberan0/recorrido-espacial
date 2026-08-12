@@ -260,7 +260,7 @@
             { name: "JÚPITER", icon: "🟠", desc: "El Rey Gigante. Un monstruo gaseoso con una tormenta eterna.", dist: "778M km", dia: "139,820 km", temp: "-108°C", pos: {x:100, y:-10, z:80}, cam: {x:130, y:20, z:110}, color: 0xff8844 }
         ];
 
-        let scene, camera, renderer, controls, ship, clock;
+        let scene, camera, renderer, controls, ship, clock, shipKeyLight, shipFillLight;
         let currentIdx = 0;
         let isAutoTour = false;
         let tourInterval;
@@ -308,8 +308,11 @@
             controls.maxDistance = 100;
             controls.minDistance = 2;
 
-            const ambient = new THREE.AmbientLight(0x404040, 2);
+            const ambient = new THREE.AmbientLight(0x6677aa, 3.2);
             scene.add(ambient);
+
+            const hemisphere = new THREE.HemisphereLight(0xbfdcff, 0x1b102d, 1.8);
+            scene.add(hemisphere);
             
             const sun = new THREE.DirectionalLight(0xffffff, 3);
             sun.position.set(50, 30, 50);
@@ -318,13 +321,17 @@
             sun.shadow.mapSize.height = 2048;
             scene.add(sun);
 
+            shipKeyLight = new THREE.PointLight(0x9fdcff, 6, 45);
+            shipFillLight = new THREE.PointLight(0xff55ff, 2.5, 35);
+            scene.add(shipKeyLight, shipFillLight);
+
             createStars();
             createPlanets();
             createAsteroids();
             createRoutePath();
             loadShip();
 
-            updateUI(0);
+            updateUI(0, false);
             createIndicators();
 
             window.addEventListener('resize', onResize);
@@ -418,6 +425,19 @@
             }
         }
 
+        function brightenShipMaterial(material) {
+            if(!material) return material;
+            const brightMaterial = material.clone();
+            if('emissive' in brightMaterial) {
+                brightMaterial.emissive = new THREE.Color(0x1a0830);
+                brightMaterial.emissiveIntensity = 0.35;
+            }
+            if('roughness' in brightMaterial) {
+                brightMaterial.roughness = Math.min(brightMaterial.roughness ?? 0.6, 0.55);
+            }
+            return brightMaterial;
+        }
+
         function loadShip() {
             const loader = new GLTFLoader();
             loader.load(
@@ -438,6 +458,9 @@
                             c.castShadow = true;
                             c.receiveShadow = true;
                             c.frustumCulled = false;
+                            const materials = Array.isArray(c.material) ? c.material : [c.material];
+                            c.material = materials.map(material => brightenShipMaterial(material));
+                            if(c.material.length === 1) c.material = c.material[0];
                         }
                     });
 
@@ -465,7 +488,7 @@
 
         function createFallbackShip() {
             const group = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x004444}));
+            const body = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshStandardMaterial({color: 0x00ffff, emissive: 0x006688, emissiveIntensity: 0.6}));
             body.rotation.x = Math.PI/2;
             group.add(body);
             group.scale.set(0.9, 0.9, 0.9);
@@ -485,26 +508,57 @@
 
         function startCinematic() {
             cinematicMode = true;
-            const startPos = camera.position.clone();
-            const targetPos = new THREE.Vector3(0, 5, 15);
-            
-            let t = 0;
-            function anim() {
-                t += 0.01;
+            activeFlight++;
+            controls.enabled = false;
+            ui.panel.classList.add('hidden');
+
+            const introFocus = shipAnchor.clone();
+            const startCam = introFocus.clone().add(new THREE.Vector3(0, 2.5, 13));
+            const heroCam = introFocus.clone().add(new THREE.Vector3(8, 3.5, 10));
+            const endCam = new THREE.Vector3(PLANETS[0].cam.x, PLANETS[0].cam.y, PLANETS[0].cam.z);
+            const endTarget = new THREE.Vector3(PLANETS[0].pos.x, PLANETS[0].pos.y, PLANETS[0].pos.z);
+            const duration = 4.8;
+            const startTime = performance.now();
+
+            camera.position.copy(startCam);
+            controls.target.copy(introFocus);
+            controls.update();
+
+            function anim(now = performance.now()) {
+                const elapsed = (now - startTime) / 1000;
+                const t = Math.min(elapsed / duration, 1);
+
+                if(t < 0.55) {
+                    const orbit = t / 0.55;
+                    const angle = -0.9 + orbit * 1.8;
+                    camera.position.set(
+                        introFocus.x + Math.sin(angle) * 11,
+                        introFocus.y + 3.2 + Math.sin(orbit * Math.PI) * 1.2,
+                        introFocus.z + Math.cos(angle) * 11
+                    );
+                    controls.target.copy(introFocus);
+                    if(ship) ship.rotation.y += 0.01;
+                } else {
+                    const travel = easeInOutCubic((t - 0.55) / 0.45);
+                    camera.position.lerpVectors(heroCam, endCam, travel);
+                    controls.target.lerpVectors(introFocus, endTarget, travel);
+                    updateShipHeading(introFocus, endTarget, 0.08);
+                }
+
+                controls.update();
+
                 if(t < 1) {
-                    const ease = 1 - Math.pow(1-t, 3);
-                    camera.position.lerpVectors(startPos, targetPos, ease);
-                    controls.target.set(0,0,0);
-                    controls.update();
                     requestAnimationFrame(anim);
                 } else {
                     cinematicMode = false;
+                    controls.enabled = true;
+                    updateUI(0);
                 }
             }
-            anim();
+            requestAnimationFrame(anim);
         }
 
-        function updateUI(idx) {
+        function updateUI(idx, showPanel = true) {
             const p = PLANETS[idx];
             ui.name.innerText = p.name;
             ui.icon.innerText = p.icon;
@@ -514,7 +568,9 @@
             ui.sTemp.innerText = p.temp;
             
             ui.panel.classList.add('hidden');
-            setTimeout(() => ui.panel.classList.remove('hidden'), 500);
+            if(showPanel) {
+                setTimeout(() => ui.panel.classList.remove('hidden'), 500);
+            }
 
             document.querySelectorAll('.dot').forEach((d, i) => {
                 d.classList.toggle('active', i === idx);
@@ -653,6 +709,11 @@
                 a.position.x = Math.cos(a.userData.angle) * a.userData.radius + PLANETS[3].pos.x;
                 a.position.z = Math.sin(a.userData.angle) * a.userData.radius + PLANETS[3].pos.z;
             });
+
+            if(ship) {
+                shipKeyLight.position.copy(ship.position).add(new THREE.Vector3(4, 5, 6));
+                shipFillLight.position.copy(ship.position).add(new THREE.Vector3(-5, 2, -3));
+            }
 
             if(ship && !cinematicMode) {
                 const stablePos = shipAnchor.clone();
