@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viaje a Júpiter - Experiencia Espacial</title>
+    <title>Sistema Solar - Recorrido Espacial</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
 
@@ -90,6 +90,7 @@
             pointer-events: auto;
             transition: opacity 0.5s ease, transform 0.5s ease;
             box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+            perspective: 900px;
         }
 
         #info-panel.hidden {
@@ -98,9 +99,39 @@
             pointer-events: none;
         }
 
-        .planet-icon { font-size: 3rem; margin-bottom: 0.5rem; display: block; }
-        .planet-name { font-family: 'Orbitron'; font-size: 2rem; color: var(--primary); margin-bottom: 1rem; text-transform: uppercase; }
-        .planet-desc { font-size: 1.1rem; line-height: 1.5; margin-bottom: 1.5rem; color: #ddd; }
+        /* Tarjeta "3D": se inclina levemente según la posición del cursor. */
+        .card-inner {
+            transform-style: preserve-3d;
+            transition: transform 0.2s ease-out;
+        }
+
+        .planet-badge-wrap {
+            width: 92px; height: 92px;
+            margin: 0 auto 0.8rem;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            background: #1a2436;
+            box-shadow: 0 0 25px rgba(0,243,255,0.35), inset -16px -12px 26px rgba(0,0,0,0.6);
+            transform: translateZ(30px);
+        }
+        .planet-badge-wrap.no-thumb { display: none; }
+        .planet-badge {
+            position: absolute; inset: 0;
+            background-repeat: repeat-x;
+            background-size: auto 100%;
+            animation: spin-badge 9s linear infinite;
+        }
+        @keyframes spin-badge { from { background-position: 0 0; } to { background-position: -192px 0; } }
+        .planet-badge-shade {
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 32% 28%, transparent 40%, rgba(0,0,0,0.7) 100%);
+        }
+
+        .planet-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; transform: translateZ(18px); }
+        .planet-icon { font-size: 1.8rem; display: block; }
+        .planet-name { font-family: 'Orbitron'; font-size: 1.6rem; color: var(--primary); text-transform: uppercase; }
+        .planet-desc { font-size: 1.1rem; line-height: 1.5; margin-bottom: 1.5rem; color: #ddd; transform: translateZ(10px); }
         
         .stats-grid {
             display: grid;
@@ -142,11 +173,11 @@
 
         .indicators {
             display: flex;
-            gap: 8px;
+            gap: 5px;
         }
 
         .dot {
-            width: 10px; height: 10px;
+            width: 7px; height: 7px;
             border-radius: 50%;
             background: rgba(255,255,255,0.3);
             cursor: pointer;
@@ -208,7 +239,7 @@
 
     <div class="ui-layer">
         <header>
-            <h1>MISIÓN: JÚPITER</h1>
+            <h1>MISIÓN: SISTEMA SOLAR</h1>
             <div class="controls-top">
                 <button onclick="toggleAutoTour()" id="btn-auto">▶ AUTO</button>
                 <button onclick="toggleMusic()" id="btn-music">🎵</button>
@@ -216,14 +247,22 @@
         </header>
 
         <div id="info-panel">
-            <span class="planet-icon" id="p-icon">🌍</span>
-            <h2 class="planet-name" id="p-name">TIERRA</h2>
-            <p class="planet-desc" id="p-desc">Nuestro hogar. El punto de partida de esta increíble travesía interestelar.</p>
-            <div class="stats-grid">
-                <div class="stat-item"><label>DISTANCIA</label><span id="s-dist">0 km</span></div>
-                <div class="stat-item"><label>DIÁMETRO</label><span id="s-dia">12,742 km</span></div>
-                <div class="stat-item"><label>TEMP</label><span id="s-temp">15°C</span></div>
-                <div class="stat-item"><label>TIPO</label><span>Rocoso</span></div>
+            <div class="card-inner" id="card-inner">
+                <div class="planet-badge-wrap" id="p-badge-wrap">
+                    <div class="planet-badge" id="p-badge"></div>
+                    <div class="planet-badge-shade"></div>
+                </div>
+                <div class="planet-header">
+                    <span class="planet-icon" id="p-icon">🌍</span>
+                    <h2 class="planet-name" id="p-name">TIERRA</h2>
+                </div>
+                <p class="planet-desc" id="p-desc">Nuestro hogar. El punto de partida de esta increíble travesía interestelar.</p>
+                <div class="stats-grid">
+                    <div class="stat-item"><label>DISTANCIA AL SOL</label><span id="s-dist">0 km</span></div>
+                    <div class="stat-item"><label>DIÁMETRO</label><span id="s-dia">12,742 km</span></div>
+                    <div class="stat-item"><label>TEMP</label><span id="s-temp">15°C</span></div>
+                    <div class="stat-item"><label>TIPO</label><span id="s-type">Rocoso</span></div>
+                </div>
             </div>
         </div>
 
@@ -252,16 +291,59 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+        // Todas las posiciones se calculan alrededor del Sol (origen). Las distancias
+        // están comprimidas (no a escala real) para que el sistema completo entre en
+        // escena, pero el ORDEN y las proporciones relativas respetan el sistema solar real.
+        const DEG = Math.PI / 180;
+        function orbitPos(distance, angleDeg, y = 0) {
+            return { x: distance * Math.cos(angleDeg * DEG), y, z: distance * Math.sin(angleDeg * DEG) };
+        }
+        function camFor(pos, radius, ratio = 6.5) {
+            const ux = 1, uy = 0.45, uz = 1;
+            const len = Math.sqrt(ux*ux + uy*uy + uz*uz);
+            const d = radius * ratio / len;
+            return { x: pos.x + ux*d, y: pos.y + uy*d, z: pos.z + uz*d };
+        }
+
+        // Radios relativos (Tierra = 3), comprimidos para que Júpiter/Saturno entren
+        // en escena sin ser absurdos, manteniendo el orden de tamaños real.
+        const RADII = {
+            MERCURY: 1.1, VENUS: 2.8, EARTH: 3, MOON: 0.85, MARS: 1.6,
+            BELT: 0.55, JUPITER: 9.5, SATURN: 7.8, URANUS: 3.5, NEPTUNE: 3.4
+        };
+
+        const mercuryPos = orbitPos(16, 0, 1);
+        const venusPos   = orbitPos(24, 137.5, -2);
+        const earthPos   = orbitPos(34, 275, 0);
+        const moonPos    = { x: earthPos.x - 6, y: earthPos.y + 1.4, z: earthPos.z - 5 };
+        const marsPos    = orbitPos(46, 52.5, 2);
+        const beltPos    = orbitPos(59, 190, -1);
+        const jupiterPos = orbitPos(82, 327.5, 3);
+        const saturnPos  = orbitPos(112, 105, -3);
+        const uranusPos  = orbitPos(140, 242.5, 2);
+        const neptunePos = orbitPos(165, 20, -2);
+
         const PLANETS = [
-            { name: "TIERRA", icon: "🌍", desc: "Nuestro hogar azul. Desde aquí comienza la humanidad su expansión hacia las estrellas.", dist: "0 km", dia: "12,742 km", temp: "15°C", pos: {x:0, y:0, z:0}, cam: {x:25, y:10, z:25}, color: 0x2266ff },
-            { name: "LUNA", icon: "🌙", desc: "Nuestro fiel satélite. El primer paso del hombre fuera de la Tierra.", dist: "384,400 km", dia: "3,474 km", temp: "-173°C", pos: {x:-30, y:5, z:-20}, cam: {x:-40, y:10, z:-30}, color: 0xaaaaaa },
-            { name: "MARTE", icon: "🔴", desc: "El planeta rojo. Un desierto frío con el volcán más grande del sistema solar.", dist: "227M km", dia: "6,779 km", temp: "-63°C", pos: {x:50, y:-5, z:40}, cam: {x:65, y:10, z:55}, color: 0xff4422 },
-            { name: "CINTURÓN", icon: "☄️", desc: "Zona de peligro. Millones de asteroides orbitan entre Marte y Júpiter.", dist: "2.5 UA", dia: "Variable", temp: "-73°C", pos: {x:-60, y:0, z:-50}, cam: {x:-50, y:20, z:-40}, color: 0x886644 },
-            { name: "JÚPITER", icon: "🟠", desc: "El Rey Gigante. Un monstruo gaseoso con una tormenta eterna.", dist: "778M km", dia: "139,820 km", temp: "-108°C", pos: {x:100, y:-10, z:80}, cam: {x:130, y:20, z:110}, color: 0xff8844 }
+            { tipo:"Rocoso", type:'MERCURY', name:"MERCURIO", icon:"☿️", desc:"El planeta más veloz y el más cercano al Sol. De día es un horno; de noche, un congelador absoluto.", dist:"57.9M km", dia:"4,879 km", temp:"167°C", pos: mercuryPos, cam: camFor(mercuryPos, RADII.MERCURY, 9) },
+            { tipo:"Rocoso", type:'VENUS', name:"VENUS", icon:"🟡", desc:"El planeta más caliente del sistema solar: sus nubes tóxicas atrapan el calor como un horno gigante.", dist:"108.2M km", dia:"12,104 km", temp:"464°C", pos: venusPos, cam: camFor(venusPos, RADII.VENUS, 7) },
+            { tipo:"Rocoso", type:'EARTH', name:"TIERRA", icon:"🌍", desc:"Nuestro hogar azul. Desde aquí comienza la humanidad su expansión hacia las estrellas.", dist:"149.6M km", dia:"12,742 km", temp:"15°C", pos: earthPos, cam: camFor(earthPos, RADII.EARTH, 12.5) },
+            { tipo:"Satélite", type:'MOON', name:"LUNA", icon:"🌙", desc:"Nuestro fiel satélite. El primer paso del hombre fuera de la Tierra.", dist:"384,400 km", dia:"3,474 km", temp:"-173°C", pos: moonPos, cam: camFor(moonPos, RADII.MOON, 5) },
+            { tipo:"Rocoso", type:'MARS', name:"MARTE", icon:"🔴", desc:"El planeta rojo. Un desierto frío con el volcán más grande del sistema solar.", dist:"227.9M km", dia:"6,779 km", temp:"-63°C", pos: marsPos, cam: camFor(marsPos, RADII.MARS, 8.66) },
+            { tipo:"Fragmentos", type:'BELT', name:"CINTURÓN", icon:"☄️", desc:"Zona de peligro. Millones de asteroides orbitan entre Marte y Júpiter.", dist:"2.2 - 3.2 UA", dia:"Variable", temp:"-73°C", pos: beltPos, cam: camFor(beltPos, 8, 3) },
+            { tipo:"Gaseoso", type:'JUPITER', name:"JÚPITER", icon:"🟠", desc:"El Rey Gigante. Un monstruo gaseoso con una tormenta eterna, la Gran Mancha Roja.", dist:"778.5M km", dia:"139,820 km", temp:"-108°C", pos: jupiterPos, cam: camFor(jupiterPos, RADII.JUPITER, 4.33) },
+            { tipo:"Gaseoso", type:'SATURN', name:"SATURNO", icon:"🪐", desc:"El señor de los anillos. Miles de bloques de hielo y roca giran a su alrededor formando su famoso disco.", dist:"1,434M km", dia:"116,460 km", temp:"-139°C", pos: saturnPos, cam: camFor(saturnPos, RADII.SATURN, 5.5) },
+            { tipo:"Gigante helado", type:'URANUS', name:"URANO", icon:"🔵", desc:"Un gigante helado que gira de costado, como si rodara en vez de girar como los demás.", dist:"2,871M km", dia:"50,724 km", temp:"-195°C", pos: uranusPos, cam: camFor(uranusPos, RADII.URANUS, 7) },
+            { tipo:"Gigante helado", type:'NEPTUNE', name:"NEPTUNO", icon:"🔷", desc:"El planeta más lejano y ventoso: sus tormentas tienen los vientos más fuertes del sistema solar.", dist:"4,495M km", dia:"49,244 km", temp:"-201°C", pos: neptunePos, cam: camFor(neptunePos, RADII.NEPTUNE, 7) }
         ];
 
+        const ROTATION_SPEEDS = {
+            MERCURY: 0.0015, VENUS: 0.0008, EARTH: 0.0022, MOON: 0.0009, MARS: 0.0019,
+            BELT: 0.0012, JUPITER: 0.0055, SATURN: 0.005, URANUS: 0.003, NEPTUNE: 0.003
+        };
+
         // Luces de la nave: conservar en conflictos para que el modelo no vuelva a verse oscuro.
-        let scene, camera, renderer, controls, ship, clock, shipKeyLight, shipFillLight;
+        let scene, camera, renderer, controls, ship, clock, shipKeyLight, shipFillLight, shipRimLight;
+        let sunLight, sunMesh;
         let currentIdx = 0;
         let isAutoTour = false;
         let tourInterval;
@@ -281,6 +363,10 @@
             sDist: document.getElementById('s-dist'),
             sDia: document.getElementById('s-dia'),
             sTemp: document.getElementById('s-temp'),
+            sType: document.getElementById('s-type'),
+            badgeWrap: document.getElementById('p-badge-wrap'),
+            badge: document.getElementById('p-badge'),
+            cardInner: document.getElementById('card-inner'),
             indicators: document.getElementById('indicators'),
             loading: document.getElementById('loading-screen'),
             progress: document.getElementById('progress'),
@@ -309,24 +395,35 @@
             controls.maxDistance = 100;
             controls.minDistance = 2;
 
-            const ambient = new THREE.AmbientLight(0x6677aa, 3.2);
+            // Iluminación de relleno tenue: el protagonismo lo tiene la luz del Sol real (más abajo).
+            const ambient = new THREE.AmbientLight(0x445577, 0.9);
             scene.add(ambient);
 
-            const hemisphere = new THREE.HemisphereLight(0xbfdcff, 0x1b102d, 1.8);
+            const hemisphere = new THREE.HemisphereLight(0xbfdcff, 0x1b1030, 1.3);
             scene.add(hemisphere);
-            
-            const sun = new THREE.DirectionalLight(0xffffff, 3);
-            sun.position.set(50, 30, 50);
-            sun.castShadow = true;
-            sun.shadow.mapSize.width = 2048;
-            sun.shadow.mapSize.height = 2048;
-            scene.add(sun);
 
-            shipKeyLight = new THREE.PointLight(0x9fdcff, 6, 45);
-            shipFillLight = new THREE.PointLight(0xff55ff, 2.5, 35);
-            scene.add(shipKeyLight, shipFillLight);
+            // El Sol vive en el centro real (0,0,0) del sistema. Usamos una PointLight
+            // (no direccional) para que cada planeta reciba la luz desde SU propia
+            // dirección hacia el Sol, según dónde esté ubicado en su órbita.
+            // decay:0 = sin caída por distancia, así Neptuno se ve tan bien iluminado
+            // como Mercurio (si usáramos caída física real, los planetas lejanos
+            // quedarían casi negros, y eso no ayuda a una experiencia educativa).
+            sunLight = new THREE.PointLight(0xfff3da, 4.6, 0, 0);
+            sunLight.position.set(0, 0, 0);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 1024;
+            sunLight.shadow.mapSize.height = 1024;
+            sunLight.shadow.camera.near = 1;
+            sunLight.shadow.camera.far = 250;
+            scene.add(sunLight);
+
+            shipKeyLight = new THREE.PointLight(0x9fdcff, 10, 60);
+            shipFillLight = new THREE.PointLight(0xff55ff, 4.5, 50);
+            shipRimLight = new THREE.PointLight(0xffffff, 5, 40);
+            scene.add(shipKeyLight, shipFillLight, shipRimLight);
 
             createStars();
+            createSun();
             createPlanets();
             createAsteroids();
             // No crear líneas de ruta: el recorrido queda guiado por la nave y las tarjetas.
@@ -336,8 +433,25 @@
             createIndicators();
 
             window.addEventListener('resize', onResize);
-            
+            setupCardTilt();
+
             animate();
+        }
+
+        // Inclina la tarjeta de información según la posición del cursor, para
+        // reforzar el efecto de profundidad 3D (insignia del planeta, texto, etc.
+        // ya están en distintos planos gracias a translateZ en el CSS).
+        function setupCardTilt() {
+            window.addEventListener('pointermove', (e) => {
+                if(ui.panel.classList.contains('hidden')) return;
+                const rect = ui.panel.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+                const dx = (e.clientX - cx) / rect.width;
+                const dy = (e.clientY - cy) / rect.height;
+                const clampedX = Math.max(-1, Math.min(1, dx));
+                const clampedY = Math.max(-1, Math.min(1, dy));
+                ui.cardInner.style.transform = `rotateY(${clampedX * 10}deg) rotateX(${-clampedY * 10}deg)`;
+            });
         }
 
         function createStars() {
@@ -346,56 +460,564 @@
             const pos = new Float32Array(count * 3);
             for(let i=0; i<count*3; i++) pos[i] = (Math.random() - 0.5) * 400;
             geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-            const mat = new THREE.PointsMaterial({color: 0xffffff, size: 0.5, transparent: true, opacity: 0.8});
+            const mat = new THREE.PointsMaterial({color: 0xffffff, size: 0.5, transparent: true, opacity: 0.8, fog: false});
             stars = new THREE.Points(geo, mat);
             scene.add(stars);
         }
 
-        function createPlanets() {
-            PLANETS.forEach((p, i) => {
-                const radius = i === 4 ? 12 : (i === 3 ? 0.5 : 3);
-                const geo = new THREE.SphereGeometry(radius, 64, 64);
-                const mat = new THREE.MeshStandardMaterial({ 
-                    color: p.color, 
-                    roughness: 0.8, 
-                    metalness: 0.2,
-                    emissive: p.color,
-                    emissiveIntensity: 0.2
+        // ======================================================================
+        // GENERADOR DE TEXTURAS PROCEDURALES
+        // Todo se dibuja en canvas en el momento de cargar: no depende de
+        // imágenes externas, así que funciona offline y en cualquier PC de
+        // escuela sin depender de la conexión a internet.
+        // ======================================================================
+
+        function makeSeededRandom(seed) {
+            let s = seed % 2147483647;
+            if (s <= 0) s += 2147483646;
+            return function() {
+                s = (s * 16807) % 2147483647;
+                return (s - 1) / 2147483646;
+            };
+        }
+
+        // Campo de ruido "periódico" (suma de senos con armónicos enteros en U):
+        // se repite exactamente al dar la vuelta a la esfera, así las texturas
+        // no muestran una costura fea en el punto de unión.
+        function makeNoiseField(seed, { terms = 6, kxMin = 1, kxMax = 6, kyMin = 0.5, kyMax = 4 } = {}) {
+            const rand = makeSeededRandom(seed);
+            const layers = [];
+            for (let i = 0; i < terms; i++) {
+                layers.push({
+                    kx: kxMin + Math.floor(rand() * (kxMax - kxMin + 1)),
+                    ky: kyMin + rand() * (kyMax - kyMin),
+                    px: rand() * Math.PI * 2,
+                    py: rand() * Math.PI * 2,
+                    amp: Math.pow(0.6, i)
                 });
+            }
+            return function(u, v) {
+                let s = 0, n = 0;
+                for (const l of layers) {
+                    s += l.amp * Math.sin(2 * Math.PI * l.kx * u + l.px) * Math.sin(Math.PI * l.ky * v + l.py + Math.PI / 2);
+                    n += l.amp;
+                }
+                return (s / n + 1) / 2;
+            };
+        }
+
+        function makeFractal(seed) {
+            const a = makeNoiseField(seed, { terms: 4, kxMin: 2, kxMax: 7, kyMin: 1, kyMax: 3 });
+            const b = makeNoiseField(seed + 50, { terms: 5, kxMin: 8, kxMax: 16, kyMin: 2, kyMax: 6 });
+            const c = makeNoiseField(seed + 99, { terms: 6, kxMin: 18, kxMax: 34, kyMin: 3, kyMax: 10 });
+            return function(u, v) { return a(u, v) * 0.55 + b(u, v) * 0.30 + c(u, v) * 0.15; };
+        }
+
+        function lerpColor(c1, c2, t) {
+            return [
+                c1[0] + (c2[0] - c1[0]) * t,
+                c1[1] + (c2[1] - c1[1]) * t,
+                c1[2] + (c2[2] - c1[2]) * t
+            ];
+        }
+
+        function generateEarthTextures() {
+            const w = 1024, h = 512;
+            const field = makeFractal(11);
+            const cloudField = makeFractal(777);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+
+            const cloudCanvas = document.createElement('canvas');
+            cloudCanvas.width = w; cloudCanvas.height = h;
+            const cctx = cloudCanvas.getContext('2d');
+            const cimg = cctx.createImageData(w, h);
+
+            const oceanDeep = [7, 26, 64], oceanShallow = [22, 88, 148];
+            const landLow = [45, 108, 58], landMid = [122, 112, 62], desert = [176, 146, 88];
+            const landHigh = [150, 138, 118], landPeak = [238, 238, 238];
+
+            for (let y = 0; y < h; y++) {
+                const v = y / h;
+                const lat = (v - 0.5) * 2;
+                const poleFactor = Math.max(0, (Math.abs(lat) - 0.80) / 0.20);
+                for (let x = 0; x < w; x++) {
+                    const u = x / w;
+                    const n = field(u, v);
+                    let col;
+                    if (n < 0.47) {
+                        col = lerpColor(oceanDeep, oceanShallow, n / 0.47);
+                    } else {
+                        const t = (n - 0.47) / 0.53;
+                        if (t < 0.35) col = lerpColor(landLow, landMid, t / 0.35);
+                        else if (t < 0.55) col = lerpColor(landMid, desert, (t - 0.35) / 0.20);
+                        else if (t < 0.8) col = lerpColor(desert, landHigh, (t - 0.55) / 0.25);
+                        else col = lerpColor(landHigh, landPeak, (t - 0.8) / 0.20);
+                    }
+                    col = lerpColor(col, [250, 250, 255], Math.min(1, poleFactor));
+
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+
+                    const cn = cloudField(u + 0.3, v);
+                    let alpha = Math.min(1, Math.max(0, (cn - 0.48) * 3.4)) * (1 - poleFactor * 0.5);
+                    cimg.data[idx] = 255; cimg.data[idx + 1] = 255; cimg.data[idx + 2] = 255; cimg.data[idx + 3] = Math.round(alpha * 255);
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            cctx.putImageData(cimg, 0, 0);
+            return { map: new THREE.CanvasTexture(canvas), clouds: new THREE.CanvasTexture(cloudCanvas) };
+        }
+
+        function generateMoonTexture() {
+            const w = 512, h = 256;
+            const field = makeFractal(303);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+            const mare = [72, 70, 68], base = [152, 150, 146], highlight = [198, 196, 190];
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const u = x / w, v = y / h;
+                    const n = field(u, v);
+                    const col = n < 0.4 ? lerpColor(mare, base, n / 0.4) : lerpColor(base, highlight, (n - 0.4) / 0.6);
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+
+            const rand = makeSeededRandom(909);
+            for (let i = 0; i < 130; i++) {
+                const cx = rand() * w, cy = rand() * h, r = 2 + rand() * 13;
+                const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 0, cx, cy, r);
+                grad.addColorStop(0, 'rgba(212,210,204,0.55)');
+                grad.addColorStop(0.55, 'rgba(90,88,84,0.35)');
+                grad.addColorStop(0.78, 'rgba(38,36,34,0.35)');
+                grad.addColorStop(1, 'rgba(38,36,34,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+            }
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function generateMarsTexture() {
+            const w = 768, h = 384;
+            const field = makeFractal(505);
+            const ridge = makeFractal(606);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+            const low = [104, 48, 28], mid = [176, 86, 46], high = [214, 140, 92], dust = [232, 178, 122];
+
+            for (let y = 0; y < h; y++) {
+                const v = y / h;
+                const lat = (v - 0.5) * 2;
+                const poleFactor = Math.max(0, (Math.abs(lat) - 0.82) / 0.18);
+                for (let x = 0; x < w; x++) {
+                    const u = x / w;
+                    const n = field(u, v);
+                    const rdg = Math.abs(ridge(u, v) * 2 - 1);
+                    let col;
+                    if (n < 0.4) col = lerpColor(low, mid, n / 0.4);
+                    else if (n < 0.75) col = lerpColor(mid, high, (n - 0.4) / 0.35);
+                    else col = lerpColor(high, dust, (n - 0.75) / 0.25);
+                    col = lerpColor(col, low, rdg * 0.22);
+                    col = lerpColor(col, [255, 250, 245], Math.min(1, poleFactor));
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function generateJupiterTexture() {
+            const w = 1024, h = 512;
+            const bandNoise = makeFractal(707);
+            const turbulence = makeFractal(808);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+            const palette = [[224, 198, 162], [198, 154, 106], [230, 216, 190], [170, 122, 82], [238, 226, 206], [152, 106, 70]];
+
+            for (let y = 0; y < h; y++) {
+                const v = y / h;
+                for (let x = 0; x < w; x++) {
+                    const u = x / w;
+                    const warp = (turbulence(u, v) - 0.5) * 0.07;
+                    const bandPos = ((v + warp) * 18) % palette.length;
+                    const bi = Math.floor((bandPos + palette.length) % palette.length);
+                    const biNext = (bi + 1) % palette.length;
+                    const tFrac = bandPos - Math.floor(bandPos);
+                    let col = lerpColor(palette[bi], palette[biNext], tFrac);
+                    const n = bandNoise(u, v);
+                    col = lerpColor(col, [255, 240, 220], (n - 0.5) * 0.2);
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+
+            const spotX = w * 0.62, spotY = h * 0.64, rx = 72, ry = 42;
+            ctx.save();
+            ctx.translate(spotX, spotY);
+            ctx.scale(1, ry / rx);
+            ctx.translate(-spotX, -spotY);
+            const grad = ctx.createRadialGradient(spotX, spotY, 4, spotX, spotY, rx);
+            grad.addColorStop(0, 'rgba(196,84,58,0.95)');
+            grad.addColorStop(0.6, 'rgba(184,94,62,0.75)');
+            grad.addColorStop(1, 'rgba(184,94,62,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(spotX, spotY, rx, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function generateSunTexture() {
+            const w = 1024, h = 512;
+            const field = makeFractal(909);
+            const fine = makeFractal(1001);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+            const deep = [255, 132, 30], hot = [255, 196, 84], core = [255, 244, 190];
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const u = x / w, v = y / h;
+                    const n = field(u, v) * 0.7 + fine(u, v) * 0.3;
+                    const col = n < 0.5 ? lerpColor(deep, hot, n / 0.5) : lerpColor(hot, core, (n - 0.5) / 0.5);
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // Textura de anillo: RingGeometry proyecta el UV como (x,y) planos del
+        // círculo, así que el degradé concéntrico hay que dibujarlo como un
+        // "blanco" radial centrado en el canvas, no como una franja horizontal.
+        function generateRingTexture(innerFrac, tint) {
+            tint = tint || [195, 177, 150];
+            const size = 512;
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(size, size);
+            const cx = size / 2, cy = size / 2, R = size / 2;
+
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const dx = (x - cx) / R, dy = (y - cy) / R;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const idx = (y * size + x) * 4;
+                    let a = 0;
+                    if (dist >= innerFrac && dist <= 1) {
+                        const t = (dist - innerFrac) / (1 - innerFrac);
+                        a = 0.10 + 0.10 * Math.sin(t * 40) + 0.06 * Math.sin(t * 97 + 1.1);
+                        a = Math.max(0, Math.min(0.34, a));
+                        a *= Math.min(1, Math.min(t, 1 - t) * 8);
+                    }
+                    img.data[idx] = tint[0]; img.data[idx + 1] = tint[1]; img.data[idx + 2] = tint[2]; img.data[idx + 3] = Math.round(a * 255);
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function generateGlowTexture(colorInner, colorOuter) {
+            const size = 256;
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+            grad.addColorStop(0, colorInner);
+            grad.addColorStop(1, colorOuter);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, size, size);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createSun() {
+            // Radio moderado: si fuera más grande "se comería" la órbita de Mercurio (16 u.).
+            const geo = new THREE.SphereGeometry(9, 48, 48);
+            const mat = new THREE.MeshBasicMaterial({ map: generateSunTexture(), fog: false });
+            sunMesh = new THREE.Mesh(geo, mat);
+            sunMesh.position.set(0, 0, 0);
+            scene.add(sunMesh);
+
+            const glowTex = generateGlowTexture('rgba(255,244,214,0.95)', 'rgba(255,170,70,0)');
+            const glow1 = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+            glow1.scale.set(55, 55, 1);
+            scene.add(glow1);
+
+            const glowMat2 = glow1.material.clone();
+            glowMat2.opacity = 0.55;
+            const glow2 = new THREE.Sprite(glowMat2);
+            glow2.scale.set(95, 95, 1);
+            scene.add(glow2);
+        }
+
+        function generateMercuryTexture() {
+            const w = 512, h = 256;
+            const field = makeFractal(1313);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+            const low = [70, 62, 56], base = [140, 128, 116], highlight = [180, 168, 152];
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const u = x / w, v = y / h;
+                    const n = field(u, v);
+                    const col = n < 0.4 ? lerpColor(low, base, n / 0.4) : lerpColor(base, highlight, (n - 0.4) / 0.6);
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+
+            const rand = makeSeededRandom(1717);
+            for (let i = 0; i < 170; i++) {
+                const cx = rand() * w, cy = rand() * h, r = 1.5 + rand() * 11;
+                const grad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 0, cx, cy, r);
+                grad.addColorStop(0, 'rgba(196,186,170,0.55)');
+                grad.addColorStop(0.55, 'rgba(80,72,64,0.35)');
+                grad.addColorStop(0.78, 'rgba(34,30,26,0.35)');
+                grad.addColorStop(1, 'rgba(34,30,26,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+            }
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function generateVenusTexture() {
+            const w = 1024, h = 512;
+            const field = makeFractal(2121);
+            const swirl = makeFractal(2222);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+            const deep = [196, 150, 88], mid = [226, 196, 138], bright = [246, 232, 196];
+
+            for (let y = 0; y < h; y++) {
+                const v = y / h;
+                for (let x = 0; x < w; x++) {
+                    const u = x / w;
+                    const warp = (swirl(u, v) - 0.5) * 0.35;
+                    let uu = (u + warp) % 1; if (uu < 0) uu += 1;
+                    const n = field(uu, v);
+                    const col = n < 0.5 ? lerpColor(deep, mid, n / 0.5) : lerpColor(mid, bright, (n - 0.5) / 0.5);
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function generateSaturnTexture() {
+            const w = 1024, h = 512;
+            const bandNoise = makeFractal(2323);
+            const turbulence = makeFractal(2424);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+            const palette = [[230, 214, 178], [214, 194, 152], [238, 226, 196], [200, 180, 138]];
+
+            for (let y = 0; y < h; y++) {
+                const v = y / h;
+                for (let x = 0; x < w; x++) {
+                    const u = x / w;
+                    const warp = (turbulence(u, v) - 0.5) * 0.05;
+                    const bandPos = ((v + warp) * 14) % palette.length;
+                    const bi = Math.floor((bandPos + palette.length) % palette.length);
+                    const biNext = (bi + 1) % palette.length;
+                    const tFrac = bandPos - Math.floor(bandPos);
+                    let col = lerpColor(palette[bi], palette[biNext], tFrac);
+                    const n = bandNoise(u, v);
+                    col = lerpColor(col, [250, 240, 215], (n - 0.5) * 0.12);
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function generateIceGiantTexture(seed, base, variant, spot) {
+            const w = 1024, h = 512;
+            const field = makeFractal(seed);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const img = ctx.createImageData(w, h);
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const u = x / w, v = y / h;
+                    const n = field(u, v);
+                    const col = lerpColor(base, variant, n * 0.5);
+                    const idx = (y * w + x) * 4;
+                    img.data[idx] = col[0]; img.data[idx + 1] = col[1]; img.data[idx + 2] = col[2]; img.data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(img, 0, 0);
+
+            if (spot) {
+                const sx = w * 0.58, sy = h * 0.55, rx = 55, ry = 34;
+                ctx.save();
+                ctx.translate(sx, sy); ctx.scale(1, ry / rx); ctx.translate(-sx, -sy);
+                const grad = ctx.createRadialGradient(sx, sy, 4, sx, sy, rx);
+                grad.addColorStop(0, 'rgba(20,40,70,0.85)');
+                grad.addColorStop(0.6, 'rgba(30,55,90,0.6)');
+                grad.addColorStop(1, 'rgba(30,55,90,0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(sx, sy, rx, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+
+            return new THREE.CanvasTexture(canvas);
+        }
+        function generateUranusTexture() { return generateIceGiantTexture(2525, [176, 224, 224], [206, 240, 238], false); }
+        function generateNeptuneTexture() { return generateIceGiantTexture(2626, [46, 74, 168], [70, 108, 200], true); }
+
+        function addRing(mesh, radius, innerR, outerR, tint) {
+            const ringGeo = new THREE.RingGeometry(innerR, outerR, 128);
+            const ringMat = new THREE.MeshStandardMaterial({
+                map: generateRingTexture(innerR / outerR, tint),
+                transparent: true, side: THREE.DoubleSide, roughness: 1, metalness: 0
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.copy(mesh.position);
+            scene.add(ring);
+        }
+
+        function createPlanets() {
+            PLANETS.forEach((p) => {
+                const radius = RADII[p.type];
+                const geo = new THREE.SphereGeometry(radius, 64, 64);
+                let mat, cloudsTex = null;
+
+                switch (p.type) {
+                    case 'MERCURY':
+                        mat = new THREE.MeshStandardMaterial({ map: generateMercuryTexture(), roughness: 1, metalness: 0 });
+                        break;
+                    case 'VENUS':
+                        mat = new THREE.MeshStandardMaterial({ map: generateVenusTexture(), roughness: 0.9, metalness: 0 });
+                        break;
+                    case 'EARTH': {
+                        const { map, clouds } = generateEarthTextures();
+                        mat = new THREE.MeshStandardMaterial({ map, roughness: 0.75, metalness: 0.05 });
+                        cloudsTex = clouds;
+                        break;
+                    }
+                    case 'MOON':
+                        mat = new THREE.MeshStandardMaterial({ map: generateMoonTexture(), roughness: 1, metalness: 0 });
+                        break;
+                    case 'MARS':
+                        mat = new THREE.MeshStandardMaterial({ map: generateMarsTexture(), roughness: 0.95, metalness: 0.05 });
+                        break;
+                    case 'BELT':
+                        mat = new THREE.MeshStandardMaterial({ color: 0x8a7358, roughness: 1, metalness: 0.1 });
+                        break;
+                    case 'JUPITER':
+                        mat = new THREE.MeshStandardMaterial({ map: generateJupiterTexture(), roughness: 0.85, metalness: 0 });
+                        break;
+                    case 'SATURN':
+                        mat = new THREE.MeshStandardMaterial({ map: generateSaturnTexture(), roughness: 0.85, metalness: 0 });
+                        break;
+                    case 'URANUS':
+                        mat = new THREE.MeshStandardMaterial({ map: generateUranusTexture(), roughness: 0.8, metalness: 0 });
+                        break;
+                    case 'NEPTUNE':
+                        mat = new THREE.MeshStandardMaterial({ map: generateNeptuneTexture(), roughness: 0.8, metalness: 0 });
+                        break;
+                }
+
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.set(p.pos.x, p.pos.y, p.pos.z);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
-                
-                if(i === 4) {
-                    const ringGeo = new THREE.RingGeometry(13, 18, 64);
-                    const ringMat = new THREE.MeshBasicMaterial({ color: 0xccaa88, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
-                    const ring = new THREE.Mesh(ringGeo, ringMat);
-                    ring.rotation.x = Math.PI / 2;
-                    ring.position.copy(mesh.position);
-                    scene.add(ring);
-                }
-
                 scene.add(mesh);
                 p.mesh = mesh;
+                // Miniatura para la tarjeta "3D": usamos la textura real del planeta.
+                p.thumb = (mat.map && mat.map.image && mat.map.image.toDataURL) ? mat.map.image.toDataURL() : null;
+
+                if (cloudsTex) {
+                    const cloudsMesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(radius * 1.015, 64, 64),
+                        new THREE.MeshStandardMaterial({ map: cloudsTex, transparent: true, depthWrite: false, roughness: 1 })
+                    );
+                    mesh.add(cloudsMesh);
+                    p.clouds = cloudsMesh;
+
+                    const atmos = new THREE.Mesh(
+                        new THREE.SphereGeometry(radius * 1.09, 48, 48),
+                        new THREE.MeshBasicMaterial({ color: 0x5fb6ff, transparent: true, opacity: 0.16, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
+                    );
+                    mesh.add(atmos);
+                }
+
+                if (p.type === 'VENUS') {
+                    const haze = new THREE.Mesh(
+                        new THREE.SphereGeometry(radius * 1.06, 48, 48),
+                        new THREE.MeshBasicMaterial({ color: 0xffe9b0, transparent: true, opacity: 0.14, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
+                    );
+                    mesh.add(haze);
+                }
+
+                if (p.type === 'JUPITER') {
+                    addRing(mesh, radius, radius * 1.4, radius * 1.9, [195, 177, 150]);
+                    const haze = new THREE.Mesh(
+                        new THREE.SphereGeometry(radius * 1.05, 48, 48),
+                        new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.10, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
+                    );
+                    mesh.add(haze);
+                }
+
+                if (p.type === 'SATURN') {
+                    // Anillos bien anchos y dorados: la marca registrada de Saturno.
+                    addRing(mesh, radius, radius * 1.3, radius * 2.3, [225, 205, 165]);
+                }
             });
         }
 
         function createAsteroids() {
+            // Cinturón real alrededor del Sol (entre Marte @46 y Júpiter @82).
             const geo = new THREE.DodecahedronGeometry(0.4, 0);
-            const mat = new THREE.MeshStandardMaterial({ color: 0x886644, roughness: 1 });
-            const center = PLANETS[3].pos;
-            
-            for(let i=0; i<200; i++) {
-                const mesh = new THREE.Mesh(geo, mat);
-                const angle = Math.random() * Math.PI * 2;
-                const rad = 15 + Math.random() * 10;
+            const palette = [0x8a7358, 0x746046, 0x9c8468, 0x655338];
+            const mats = palette.map(color => new THREE.MeshStandardMaterial({ color, roughness: 1, metalness: 0.05 }));
+            const rand = makeSeededRandom(4242);
+            const innerR = 50, outerR = 68;
+
+            for(let i=0; i<260; i++) {
+                const mesh = new THREE.Mesh(geo, mats[i % mats.length]);
+                const angle = rand() * Math.PI * 2;
+                const rad = innerR + rand() * (outerR - innerR);
                 mesh.position.set(
-                    Math.cos(angle)*rad + center.x,
-                    (Math.random()-0.5)*4 + center.y,
-                    Math.sin(angle)*rad + center.z
+                    Math.cos(angle) * rad,
+                    (rand() - 0.5) * 3,
+                    Math.sin(angle) * rad
                 );
-                mesh.userData = { speed: 0.001 + Math.random()*0.002, angle: angle, radius: rad, rot: {x:Math.random()*0.02, y:Math.random()*0.02} };
+                mesh.scale.setScalar(0.4 + rand() * 1.1);
+                mesh.castShadow = true;
+                mesh.userData = { speed: 0.0003 + rand()*0.0009, angle: angle, radius: rad, rot: {x:rand()*0.02, y:rand()*0.02} };
                 scene.add(mesh);
                 asteroids.push(mesh);
             }
@@ -405,13 +1027,27 @@
             if(!material) return material;
             const brightMaterial = material.clone();
             if('emissive' in brightMaterial) {
-                brightMaterial.emissive = new THREE.Color(0x1a0830);
-                brightMaterial.emissiveIntensity = 0.35;
+                brightMaterial.emissive = new THREE.Color(0x1c2c42);
+                brightMaterial.emissiveIntensity = 0.45;
             }
             if('roughness' in brightMaterial) {
                 brightMaterial.roughness = Math.min(brightMaterial.roughness ?? 0.6, 0.55);
             }
+            if('metalness' in brightMaterial) {
+                // Sin un mapa de entorno, un metalness alto se ve casi negro:
+                // lo bajamos para que la luz directa/ambiente lo ilumine bien.
+                brightMaterial.metalness = Math.min(brightMaterial.metalness ?? 0.5, 0.4);
+            }
+            brightMaterial.fog = false;
             return brightMaterial;
+        }
+
+        // Puntos de la cinemática de llegada: la nave arranca lejísimos, en el
+        // espacio profundo, y viaja hasta su primera parada del recorrido.
+        function getIntroPoints() {
+            const arrival = getShipWaypoint(0);
+            const start = new THREE.Vector3(-260, 110, 300);
+            return { start, arrival };
         }
 
         function loadShip() {
@@ -443,9 +1079,17 @@
 
                     ship = new THREE.Group();
                     ship.add(model);
-                    shipAnchor.copy(getShipWaypoint(currentIdx));
-                    ship.position.copy(shipAnchor);
+
+                    // Ubicar la nave en su punto de partida lejano y orientarla YA
+                    // (blend=1, snap inmediato) hacia donde va a viajar: así nunca se
+                    // muestra ni un frame con la rotación "cruda" del archivo .glb,
+                    // que es lo que causaba que se viera cabeza abajo al aparecer.
+                    const { start, arrival } = getIntroPoints();
+                    ship.position.copy(start);
                     scene.add(ship);
+                    updateShipHeading(start, arrival, 1);
+                    shipAnchor.copy(start);
+
                     console.log("✅ Nave cargada correctamente");
                     finishLoading();
                 },
@@ -456,9 +1100,12 @@
                 },
                 (err) => {
                     console.error("❌ Error cargando nave:", err);
-                    ui.status.innerText = "Error cargando modelo. Usando nave básica.";
+                    const isLocalFile = location.protocol === 'file:';
+                    ui.status.innerText = isLocalFile
+                        ? "No se pudo cargar nave.glb (abrí este archivo con doble clic: los navegadores bloquean modelos locales así). Serví la carpeta con un servidor local. Usando nave básica."
+                        : "Error cargando modelo. Usando nave básica.";
                     createFallbackShip();
-                    finishLoading();
+                    finishLoading(isLocalFile ? 3200 : 800);
                 }
             );
         }
@@ -469,18 +1116,21 @@
             body.rotation.x = Math.PI/2;
             group.add(body);
             group.scale.set(0.9, 0.9, 0.9);
-            shipAnchor.copy(getShipWaypoint(currentIdx));
-            group.position.copy(shipAnchor);
+
+            const { start, arrival } = getIntroPoints();
+            group.position.copy(start);
             scene.add(group);
             ship = group;
+            updateShipHeading(start, arrival, 1);
+            shipAnchor.copy(start);
         }
 
-        function finishLoading() {
+        function finishLoading(delay = 800) {
             setTimeout(() => {
                 ui.loading.style.opacity = 0;
                 setTimeout(() => ui.loading.style.display = 'none', 1000);
                 startCinematic();
-            }, 800);
+            }, delay);
         }
 
         function startCinematic() {
@@ -489,37 +1139,68 @@
             controls.enabled = false;
             ui.panel.classList.add('hidden');
 
-            const introFocus = shipAnchor.clone();
-            const startCam = introFocus.clone().add(new THREE.Vector3(0, 2.5, 13));
-            const heroCam = introFocus.clone().add(new THREE.Vector3(8, 3.5, 10));
+            // La cámara necesita alejarse mucho más que el límite normal (100u)
+            // durante la toma de llegada; lo restauramos al terminar.
+            const prevMaxDistance = controls.maxDistance;
+            controls.maxDistance = 2000;
+
+            const { start: farStart, arrival: arrivalPoint } = getIntroPoints();
+            const travelDir = arrivalPoint.clone().sub(farStart).normalize();
+            const worldUp = new THREE.Vector3(0, 1, 0);
+            const right = new THREE.Vector3().crossVectors(travelDir, worldUp).normalize();
+            const up = new THREE.Vector3().crossVectors(right, travelDir).normalize();
+
+            const heroCam = arrivalPoint.clone().add(new THREE.Vector3(8, 3.5, 10));
             const endCam = new THREE.Vector3(PLANETS[0].cam.x, PLANETS[0].cam.y, PLANETS[0].cam.z);
             const endTarget = new THREE.Vector3(PLANETS[0].pos.x, PLANETS[0].pos.y, PLANETS[0].pos.z);
-            const duration = 4.8;
-            const startTime = performance.now();
 
-            camera.position.copy(startCam);
-            controls.target.copy(introFocus);
-            controls.update();
+            const duration = 9.6;
+            const startTime = performance.now();
 
             function anim(now = performance.now()) {
                 const elapsed = (now - startTime) / 1000;
                 const t = Math.min(elapsed / duration, 1);
 
-                if(t < 0.55) {
-                    const orbit = t / 0.55;
+                if (t < 0.35) {
+                    // FASE 1 — La nave llega desde el espacio profundo. La cámara
+                    // corta entre tres ángulos (perfil lateral, 3/4 frontal, persecución
+                    // trasera) mientras se acerca al sistema solar.
+                    const travelT = easeInOutCubic(t / 0.35);
+                    ship.position.lerpVectors(farStart, arrivalPoint, travelT);
+                    shipAnchor.copy(ship.position);
+                    updateShipHeading(farStart, arrivalPoint, 1);
+
+                    let offset;
+                    if (t < 0.12) {
+                        offset = right.clone().multiplyScalar(26).add(up.clone().multiplyScalar(5));
+                    } else if (t < 0.24) {
+                        offset = travelDir.clone().multiplyScalar(-17).add(right.clone().multiplyScalar(10)).add(up.clone().multiplyScalar(8));
+                    } else {
+                        offset = travelDir.clone().multiplyScalar(-22).add(up.clone().multiplyScalar(6));
+                    }
+                    camera.position.copy(ship.position).add(offset);
+                    controls.target.copy(ship.position);
+                } else if (t < 0.7) {
+                    // FASE 2 — La nave ya llegó a su primera parada; toma "héroe" orbitando.
+                    const orbit = (t - 0.35) / 0.35;
                     const angle = -0.9 + orbit * 1.8;
                     camera.position.set(
-                        introFocus.x + Math.sin(angle) * 11,
-                        introFocus.y + 3.2 + Math.sin(orbit * Math.PI) * 1.2,
-                        introFocus.z + Math.cos(angle) * 11
+                        arrivalPoint.x + Math.sin(angle) * 11,
+                        arrivalPoint.y + 3.2 + Math.sin(orbit * Math.PI) * 1.2,
+                        arrivalPoint.z + Math.cos(angle) * 11
                     );
-                    controls.target.copy(introFocus);
-                    if(ship) ship.rotation.y += 0.01;
+                    controls.target.copy(arrivalPoint);
+                    // (Antes había un ship.rotateY(0.01) acá: giraba la nave sin límite
+                    // durante ~3 segundos. Si ese giro acumulado quedaba cerca de 180°
+                    // respecto a la orientación de la fase 3, el slerp al convergir
+                    // podía "voltear" la nave de cabeza. La sacamos: la nave queda
+                    // quieta mirando hacia su llegada mientras la cámara orbita.
                 } else {
-                    const travel = easeInOutCubic((t - 0.55) / 0.45);
+                    // FASE 3 — Transición hacia la vista normal de la primera parada.
+                    const travel = easeInOutCubic((t - 0.7) / 0.3);
                     camera.position.lerpVectors(heroCam, endCam, travel);
-                    controls.target.lerpVectors(introFocus, endTarget, travel);
-                    updateShipHeading(introFocus, endTarget, 0.08);
+                    controls.target.lerpVectors(arrivalPoint, endTarget, travel);
+                    updateShipHeading(arrivalPoint, endTarget, 0.08);
                 }
 
                 controls.update();
@@ -527,8 +1208,10 @@
                 if(t < 1) {
                     requestAnimationFrame(anim);
                 } else {
+                    shipAnchor.copy(arrivalPoint);
                     cinematicMode = false;
                     controls.enabled = true;
+                    controls.maxDistance = prevMaxDistance;
                     updateUI(0);
                 }
             }
@@ -543,7 +1226,17 @@
             ui.sDist.innerText = p.dist;
             ui.sDia.innerText = p.dia;
             ui.sTemp.innerText = p.temp;
-            
+            ui.sType.innerText = p.tipo;
+
+            // Insignia "3D": la textura real del planeta panoramizada en bucle,
+            // como si fuera un mini-globo girando dentro de la tarjeta.
+            if (p.thumb) {
+                ui.badge.style.backgroundImage = `url(${p.thumb})`;
+                ui.badgeWrap.classList.remove('no-thumb');
+            } else {
+                ui.badgeWrap.classList.add('no-thumb');
+            }
+
             ui.panel.classList.add('hidden');
             if(showPanel) {
                 setTimeout(() => ui.panel.classList.remove('hidden'), 500);
@@ -572,8 +1265,17 @@
         };
 
         function getShipWaypoint(idx) {
-            const p = PLANETS[idx].pos;
-            return new THREE.Vector3(p.x + 6, p.y + 1.5, p.z + 8);
+            const p = PLANETS[idx];
+            // Distancia proporcional a cada cuerpo: un offset fijo servía para el
+            // sistema chico original, pero con Júpiter/Saturno a escala real la
+            // nave terminaba metida adentro del planeta o de sus anillos.
+            const SHIP_DISTANCE = {
+                MERCURY: 5, VENUS: 8, EARTH: 9, MOON: 4, MARS: 5.5,
+                BELT: 10, JUPITER: 21, SATURN: 22, URANUS: 8, NEPTUNE: 8
+            };
+            const dist = SHIP_DISTANCE[p.type] || 10;
+            const dir = new THREE.Vector3(6, 1.5, 8).normalize();
+            return new THREE.Vector3(p.pos.x + dir.x * dist, p.pos.y + dir.y * dist, p.pos.z + dir.z * dist);
         }
 
         function easeInOutCubic(t) {
@@ -677,19 +1379,24 @@
             const delta = clock.getDelta();
             const time = clock.elapsedTime;
 
-            PLANETS.forEach(p => { if(p.mesh) p.mesh.rotation.y += 0.001; });
+            PLANETS.forEach((p) => {
+                if(p.mesh) p.mesh.rotation.y += (ROTATION_SPEEDS[p.type] || 0.002);
+                if(p.clouds) p.clouds.rotation.y += 0.0007;
+            });
+            if(sunMesh) sunMesh.rotation.y += 0.0004;
 
             asteroids.forEach(a => {
                 a.rotation.x += a.userData.rot.x;
                 a.rotation.y += a.userData.rot.y;
                 a.userData.angle += a.userData.speed;
-                a.position.x = Math.cos(a.userData.angle) * a.userData.radius + PLANETS[3].pos.x;
-                a.position.z = Math.sin(a.userData.angle) * a.userData.radius + PLANETS[3].pos.z;
+                a.position.x = Math.cos(a.userData.angle) * a.userData.radius;
+                a.position.z = Math.sin(a.userData.angle) * a.userData.radius;
             });
 
             if(ship) {
                 shipKeyLight.position.copy(ship.position).add(new THREE.Vector3(4, 5, 6));
                 shipFillLight.position.copy(ship.position).add(new THREE.Vector3(-5, 2, -3));
+                shipRimLight.position.copy(ship.position).add(new THREE.Vector3(0, 3, -8));
             }
 
             if(ship && !cinematicMode) {
@@ -697,9 +1404,12 @@
                 stablePos.y += Math.sin(time * 1.6 + shipBobPhase) * 0.12;
                 ship.position.lerp(stablePos, Math.min(delta * 5, 1));
                 ship.rotateZ(Math.sin(time * 1.2) * 0.0008);
-            } else if (ship && cinematicMode) {
-                ship.rotation.z = Math.sin(time) * 0.06;
             }
+            // Durante la cinemática NO tocamos la rotación de la nave acá: startCinematic()
+            // corre su propio loop de requestAnimationFrame y maneja la orientación con
+            // cuaterniones (updateShipHeading). Si este loop tocaba rotation.z al mismo
+            // tiempo, los dos sistemas competían cuadro a cuadro y terminaban volteando
+            // la nave de forma impredecible — esta era la causa real de la nave "de cabeza".
 
             controls.update();
             renderer.render(scene, camera);
