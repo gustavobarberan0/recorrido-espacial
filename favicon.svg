@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Recorrido Espacial">
+    <defs>
+        <radialGradient id="planeta" cx="35%" cy="28%" r="78%">
+            <stop offset="0" stop-color="#ffd9a1"/>
+            <stop offset="0.5" stop-color="#f0913f"/>
+            <stop offset="1" stop-color="#8a3a14"/>
+        </radialGradient>
+        <linearGradient id="anillo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#9fe8ff"/>
+            <stop offset="1" stop-color="#4a6fd8"/>
+        </linearGradient>
+    </defs>
+    <rect width="64" height="64" rx="14" fill="#070a16"/>
+    <circle cx="32" cy="30" r="14.5" fill="url(#planeta)"/>
+    <ellipse cx="32" cy="34" rx="24" ry="7" fill="none" stroke="url(#anillo)" stroke-width="3" transform="rotate(-18 32 34)"/>
+    <g fill="#dff3ff">
+        <circle cx="14" cy="14" r="1.6" opacity=".85"/>
+        <circle cx="50" cy="12" r="1.2" opacity=".6"/>
+        <circle cx="52" cy="48" r="1.4" opacity=".7"/>
+        <circle cx="12" cy="46" r="1.1" opacity=".5"/>
+    </g>
+</svg>
