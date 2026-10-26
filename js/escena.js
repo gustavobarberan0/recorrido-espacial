@@ -883,7 +883,9 @@ export class Recorrido {
             this.controles.target.copy(origenObjetivo);
 
             tipo = 'intro';
-            dur = 7.4;
+            // 12 s: el viaje a velocidad luz y la frenada final se aprecian
+            // sin apuro (antes eran 7,4 s).
+            dur = 12;
             datosIntro = { inicio, llegada, dir, derecha, arribaCam };
         }
 

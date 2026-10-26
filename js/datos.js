@@ -106,7 +106,7 @@ export const CUERPOS = [
             { icono: '🧊', titulo: 'Hielo en el infierno', texto: 'En cráteres de los polos, donde nunca llega el Sol, hay hielo de agua escondido.' },
             { icono: '💨', titulo: 'El más veloz', texto: 'Recorre su órbita a 47,4 km por segundo, más rápido que cualquier otro planeta.' }
         ],
-        comparacion: 'Si la Tierra fuera una pelota de fútbol, Mercurio sería una pelota de tenis (8 cm).',
+        comparacion: 'Si la Tierra fuera una pelota de fútbol, Mercurio sería una pelota de 8,4 cm: un poco más grande que una de tenis.',
         glosario: ['orbita', 'rotacion', 'crater', 'gravedad'],
         quiz: [
             { pregunta: '¿Por qué Mercurio tiene tantos cráteres?', opciones: ['Por los volcanes', 'Porque casi no tiene atmósfera que lo proteja', 'Por el viento solar'], correcta: 1, explicacion: 'Sin atmósfera, las rocas espaciales chocan directamente contra su superficie y dejan cráteres.' },
@@ -223,7 +223,7 @@ export const CUERPOS = [
             { icono: '📏', titulo: 'Se aleja', texto: 'La Luna se aleja de la Tierra 3,8 cm por año, más o menos lo que crece una uña en un mes.' },
             { icono: '🌊', titulo: 'Mueve el mar', texto: 'Su gravedad atrae el agua de los océanos y produce las mareas altas y bajas.' }
         ],
-        comparacion: 'Si la Tierra fuera una pelota de fútbol, la Luna sería una pelota de tenis ubicada a 6,6 metros de distancia.',
+        comparacion: 'Si la Tierra fuera una pelota de fútbol, la Luna sería una pelota de 6 cm (como una de tenis un poco más chica) a 6,6 metros de distancia.',
         glosario: ['satelite', 'gravedad', 'marea', 'crater'],
         quiz: [
             { pregunta: '¿Por qué siempre vemos la misma cara de la Luna?', opciones: ['Porque no gira', 'Porque tarda lo mismo en girar que en orbitar la Tierra', 'Porque está quieta'], correcta: 1, explicacion: 'Su rotación y su traslación duran 27,3 días: por eso nos muestra siempre el mismo lado.' },
@@ -258,11 +258,11 @@ export const CUERPOS = [
             { etiqueta: 'Atmósfera', valor: '95 % dióxido de carbono' }
         ],
         curiosidades: [
-            { icono: '🏔️', titulo: 'El volcán más alto', texto: 'El Monte Olimpo mide 21,9 km: casi tres veces el Everest. Es tan ancho que desde su cima no se ve el horizonte.' },
+            { icono: '🏔️', titulo: 'El volcán más alto', texto: 'El Monte Olimpo mide 21,9 km: dos veces y media el Everest. Es tan ancho que desde su cima no se ve el horizonte.' },
             { icono: '🌅', titulo: 'Atardeceres azules', texto: 'En Marte el cielo se ve rojizo de día, pero al atardecer alrededor del Sol aparece un halo azul.' },
             { icono: '🤖', titulo: 'Robots exploradores', texto: 'Varios robots recorren Marte: Curiosity y Perseverance analizan rocas y buscan señales de vida antigua.' }
         ],
-        comparacion: 'Si la Tierra fuera una pelota de fútbol, Marte sería una pelota de béisbol (12 cm).',
+        comparacion: 'Si la Tierra fuera una pelota de fútbol, Marte sería una pelota de 11,7 cm, como un pomelo.',
         glosario: ['atmosfera', 'orbita', 'crater', 'sonda-espacial'],
         quiz: [
             { pregunta: '¿Por qué Marte es rojo?', opciones: ['Por el fuego', 'Por el óxido de hierro de su suelo', 'Por sus plantas'], correcta: 1, explicacion: 'Su superficie tiene mucho hierro oxidado, igual que un clavo viejo, y eso le da el color rojizo.' },
@@ -294,7 +294,7 @@ export const CUERPOS = [
             { etiqueta: 'Composición', valor: 'Roca, metal y hielo' },
             { etiqueta: 'Cantidad estimada', valor: 'Millones de asteroides' },
             { etiqueta: 'Masa total', valor: 'Menos del 4 % de la Luna' },
-            { etiqueta: 'Explorado por', valor: 'Sondas Dawn, Hayabusa, Psyche' }
+            { etiqueta: 'Misiones', valor: 'Dawn y Psyche (en camino)' }
         ],
         curiosidades: [
             { icono: '🪨', titulo: 'Ceres, el gigante', texto: 'Ceres es tan grande que se considera un planeta enano. Contiene una gran cantidad de hielo de agua.' },
@@ -336,7 +336,7 @@ export const CUERPOS = [
             { etiqueta: 'Composición', valor: 'Hidrógeno y helio' }
         ],
         curiosidades: [
-            { icono: '🌪️', titulo: 'La Gran Mancha Roja', texto: 'Es una tormenta más grande que la Tierra que lleva siglos girando. Podría tragarse dos planetas como el nuestro.' },
+            { icono: '🌪️', titulo: 'La Gran Mancha Roja', texto: 'Es una tormenta más grande que la Tierra que lleva siglos girando. Sus vientos superan los 400 km/h.' },
             { icono: '🌊', titulo: 'Europa y su océano', texto: 'Bajo la corteza helada de Europa hay un océano de agua líquida: uno de los mejores lugares para buscar vida.' },
             { icono: '🛡️', titulo: 'Escudo cósmico', texto: 'Su enorme gravedad desvía cometas y asteroides, protegiendo en parte a los planetas interiores.' }
         ],
@@ -379,7 +379,7 @@ export const CUERPOS = [
             { icono: '💍', titulo: 'Anillos finísimos', texto: 'Miden 280.000 km de ancho, pero en promedio solo decenas de metros de espesor. ¡Como una hoja de papel gigante!' },
             { icono: '🌫️', titulo: 'Titán', texto: 'Su luna Titán tiene ríos y lagos, pero de metano líquido, y una atmósfera más densa que la de la Tierra.' }
         ],
-        comparacion: 'Si la Tierra fuera una pelota de fútbol, Saturno sería una pelota de 2 metros con un disco de 4,6 metros.',
+        comparacion: 'Si la Tierra fuera una pelota de fútbol, Saturno sería una pelota de 2 metros con un disco de 4,7 metros.',
         glosario: ['gigante-gaseoso', 'satelite', 'densidad', 'atmosfera'],
         quiz: [
             { pregunta: '¿De qué están hechos los anillos de Saturno?', opciones: ['De gas', 'De hielo y roca', 'De polvo de estrellas'], correcta: 1, explicacion: 'Son miles de millones de fragmentos de hielo y roca que orbitan el planeta.' },
@@ -496,7 +496,7 @@ export const CUERPOS = [
             { icono: '🌍', titulo: 'Caronte, casi gemela', texto: 'La luna más grande de Plutón mide la mitad que él. Se miran siempre la misma cara, como un baile.' },
             { icono: '🚀', titulo: 'Viaje larguísimo', texto: 'New Horizons tardó 9 años y medio en llegar a Plutón, viajando a más de 50.000 km/h.' }
         ],
-        comparacion: 'Si la Tierra fuera una pelota de fútbol, Plutón sería una pelota de ping-pong (4 cm) a más de 600 metros de distancia.',
+        comparacion: 'Si la Tierra fuera una pelota de fútbol, Plutón sería una pelota de ping-pong (4 cm) a unos 102 km de distancia.',
         glosario: ['planeta-enano', 'cometa', 'cinturon-kuiper', 'sonda-espacial', 'unidad-astronomica'],
         quiz: [
             { pregunta: '¿Qué es Plutón desde 2006?', opciones: ['Un planeta gigante', 'Un planeta enano', 'Una estrella'], correcta: 1, explicacion: 'La Unión Astronómica Internacional lo reclasificó como planeta enano porque comparte su órbita con otros objetos.' },

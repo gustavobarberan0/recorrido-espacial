@@ -51,7 +51,7 @@ Al terminar la sesión, se espera que el grupo pueda:
 
 ### 2. Durante (20 minutos)
 
-- Proyectar la intro completa (7 segundos) o saltearla con el botón.
+- Proyectar la intro completa (12 segundos) o saltearla con el botón.
 - Avanzar con las flechas de la ruta. En cada parada:
   - Mirar la forma, el color y el tamaño del cuerpo.
   - Leer la ficha (o usar **Escuchar**).
