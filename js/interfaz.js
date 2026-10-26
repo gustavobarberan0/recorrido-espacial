@@ -37,6 +37,7 @@ export class Interfaz {
         this.idx = 0;
         this.auto = false;
         this.hablando = false;
+        this.panelPlegado = false;
         this.modalAbierto = null;
         this.ultimoFoco = null;
         this.quiz = { idx: -1, i: 0, aciertos: 0, respondida: false, terminado: false };
@@ -55,6 +56,7 @@ export class Interfaz {
         this.el = {
             panel: $('#panel'),
             panelBody: $('#panelBody'),
+            btnPanelToggle: $('#btnPanelToggle'),
             badge: $('#badge'),
             badgeEmoji: $('#badgeEmoji'),
             eyebrow: $('#pEyebrow'),
@@ -125,6 +127,17 @@ export class Interfaz {
                 this._activarTab(destino.dataset.tab);
             });
         });
+
+        // Plegar la ficha (solo móvil/tablet vertical)
+        if (this.el.btnPanelToggle) {
+            this.el.btnPanelToggle.addEventListener('click', () => this.alternarPanel());
+            const plegable = window.matchMedia('(max-width: 900px) and (min-height: 521px)');
+            const alCambiarPlegable = () => {
+                if (!plegable.matches && this.panelPlegado) this.alternarPanel(false);
+            };
+            if (plegable.addEventListener) plegable.addEventListener('change', alCambiarPlegable);
+            else if (plegable.addListener) plegable.addListener(alCambiarPlegable);
+        }
 
         // Nivel
         $$('.nivel-switch [data-nivel]').forEach((btn) => {
@@ -241,7 +254,7 @@ export class Interfaz {
         this.idx = idx;
         const nivel = NIVELES[this.nivel];
 
-        this.el.eyebrow.textContent = `Parada ${idx + 1} de ${CUERPOS.length} · ${cuerpo.tipo}`;
+        this.el.eyebrow.innerHTML = `Parada ${idx + 1} de ${CUERPOS.length}<span class="eyebrow-tipo"> · ${escaparHtml(cuerpo.tipo)}</span>`;
         this.el.nombre.textContent = cuerpo.nombre;
         this.el.tagline.textContent = cuerpo.resumen;
         this.el.desc.textContent = cuerpo.descripcion[this.nivel];
@@ -325,6 +338,41 @@ export class Interfaz {
         });
         this.el.panelBody.scrollTop = 0;
         if (nombre === 'quiz') this._renderQuiz();
+        this.recorrido.actualizarTamano();
+    }
+
+    /* --------------------------------------------------- PLEGAR LA FICHA */
+    alternarPanel(force) {
+        const plegar = typeof force === 'boolean' ? force : !this.panelPlegado;
+        if (plegar === this.panelPlegado) return;
+        this.panelPlegado = plegar;
+        this.el.panel.classList.toggle('minimizado', plegar);
+
+        const btn = this.el.btnPanelToggle;
+        if (btn) {
+            btn.setAttribute('aria-expanded', String(!plegar));
+            btn.setAttribute('aria-label', plegar
+                ? 'Mostrar la ficha del cuerpo celeste'
+                : 'Minimizar la ficha para ver mejor el planeta');
+            btn.title = plegar ? 'Mostrar la ficha' : 'Minimizar la ficha';
+            const icono = btn.querySelector('.pt-icon');
+            const texto = btn.querySelector('.pt-text');
+            if (icono) icono.textContent = plegar ? '▴' : '▾';
+            if (texto) texto.textContent = plegar ? 'Ver ficha' : 'Minimizar';
+        }
+
+        if (plegar) {
+            // Si el foco estaba dentro de la ficha, lo pasamos al botón
+            // antes de ocultarla para no perderlo.
+            const activo = document.activeElement;
+            if (btn && activo && activo !== btn && this.el.panel.contains(activo)) btn.focus();
+            this.anuncio.textContent = 'Ficha minimizada. Usá el botón Ver ficha para abrirla.';
+        } else {
+            this.el.panelBody.scrollTop = 0;
+            this.anuncio.textContent = 'Ficha abierta.';
+        }
+
+        // La cámara reencuadra el planeta en el espacio libre que queda.
         this.recorrido.actualizarTamano();
     }
 
@@ -827,6 +875,12 @@ export class Interfaz {
         } else if (e.key.toLowerCase() === 'p') {
             e.preventDefault();
             this.toggleAuto();
+        } else if (e.key.toLowerCase() === 'm') {
+            // Solo cuando el botón está visible (móvil/tablet vertical).
+            if (this.el.btnPanelToggle && this.el.btnPanelToggle.offsetParent !== null) {
+                e.preventDefault();
+                this.alternarPanel();
+            }
         } else if (e.key.toLowerCase() === 'i') {
             e.preventDefault();
             this.repetirIntro();

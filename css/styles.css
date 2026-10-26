@@ -241,6 +241,9 @@ body.intro-activa #app {
     flex: none;
 }
 
+/* Botón para plegar la ficha: solo aparece en móvil y tablet vertical. */
+.panel-toggle { display: none; }
+
 .badge-wrap {
     position: relative;
     width: 76px;
@@ -1020,6 +1023,65 @@ body.intro-activa #app {
     .route-pill { min-height: 34px; }
     .route-arrow { width: 36px; height: 36px; }
     .intro-overlay { padding-top: 5vh; }
+}
+
+/* Móvil/tablet vertical: la ficha se pliega a una barra compacta para
+   dejar ver el planeta. En apaisado no aplica (el panel ya va al costado). */
+@media (max-width: 900px) and (min-height: 521px) {
+    .panel-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        margin-left: auto;
+        flex: none;
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0 11px;
+        border-radius: 10px;
+        border: 1px solid var(--line-strong);
+        background: rgba(20, 36, 64, 0.9);
+        color: var(--cyan-soft);
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+        transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+    .panel-toggle .pt-icon { font-size: 0.95rem; line-height: 1; }
+    .panel-toggle:hover {
+        border-color: var(--cyan);
+        background: rgba(95, 215, 255, 0.2);
+        color: #ffffff;
+        box-shadow: 0 0 0 1px rgba(95, 215, 255, 0.35), 0 6px 18px rgba(95, 215, 255, 0.22);
+        transform: translateY(-1px);
+    }
+    .panel-toggle:active { transform: translateY(0); }
+    .panel-toggle:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    .panel.minimizado { max-height: none; }
+    .panel.minimizado .panel-head { padding: 8px 11px; gap: 9px; }
+    .panel.minimizado .badge-wrap { width: 42px; height: 42px; }
+    .panel.minimizado .badge-emoji { font-size: 1.25rem; }
+    .panel.minimizado .eyebrow { font-size: 0.55rem; margin-bottom: 1px; }
+    .panel.minimizado .panel-titles h2 { font-size: 1.05rem; }
+    .panel.minimizado .tagline { display: none; }
+    .panel.minimizado .tabs,
+    .panel.minimizado .panel-body { display: none; }
+}
+
+/* Teléfonos: abierta, el botón queda solo con el ícono y el antetítulo
+   se compacta para no partirse en dos líneas. */
+@media (max-width: 440px) and (min-height: 521px) {
+    .panel:not(.minimizado) .panel-toggle { width: 40px; padding: 0; }
+    .panel:not(.minimizado) .pt-text { display: none; }
+    .panel:not(.minimizado) .eyebrow { font-size: 0.58rem; letter-spacing: 0.1em; }
+}
+
+/* Teléfonos muy angostos: el tipo de cuerpo se omite para que la barra
+   compacta quede en una sola línea. */
+@media (max-width: 370px) and (min-height: 521px) {
+    .eyebrow-tipo { display: none; }
+    .panel.minimizado .eyebrow { font-size: 0.6rem; }
 }
 
 /* Móvil apaisado: panel al costado para no comerse la escena. */

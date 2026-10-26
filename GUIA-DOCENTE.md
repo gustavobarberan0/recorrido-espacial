@@ -133,6 +133,9 @@ El **Desafío** de la app puede usarse como cierre lúdico, no como nota.
 - **Voz**: el botón **Escuchar** usa la voz del sistema operativo. Si no se escucha,
   revisar el volumen y que el equipo tenga voces instaladas.
 - **Pantalla completa**: botón ⛶ para evitar distracciones del escritorio.
+- **Ficha plegable (móvil y tablet en vertical)**: el botón **▾ Minimizar** deja la ficha
+  en una barra compacta para ver mejor el planeta. **▴ Ver ficha** la vuelve a abrir.
+  También responde a la tecla `M`.
 
 ---
 

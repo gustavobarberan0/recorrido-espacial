@@ -24,7 +24,7 @@ Funciona **sin internet** y no necesita instalar nada: se abre en el navegador.
 - **Nave con luces propias, balizas roja/verde/blanca y halo** para ubicarla incluso
   en las zonas más oscuras.
 - **Layout responsive** sin superposiciones: panel lateral en escritorio, panel inferior
-  en tablet/móvil.
+  en tablet/móvil, con botón para plegar la ficha y ver mejor el planeta.
 
 ---
 

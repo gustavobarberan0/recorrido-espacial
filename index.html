@@ -7,7 +7,7 @@
     <meta name="description" content="Recorrido Espacial: un viaje interactivo por el sistema solar para escuelas primarias. 12 paradas, dos niveles de lectura, quiz y guía docente.">
     <title>Recorrido Espacial · Sistema Solar para escuelas</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/styles.css?v=1">
+    <link rel="stylesheet" href="css/styles.css?v=3">
 </head>
 <body>
 
@@ -96,9 +96,16 @@
                         <h2 id="pNombre">Sol</h2>
                         <p class="tagline" id="pTagline">La estrella que hace posible la vida en la Tierra.</p>
                     </div>
+                    <button type="button" id="btnPanelToggle" class="panel-toggle"
+                            aria-expanded="true" aria-controls="panelTabs panelBody"
+                            aria-label="Minimizar la ficha para ver mejor el planeta"
+                            title="Minimizar la ficha">
+                        <span class="pt-icon" aria-hidden="true">▾</span>
+                        <span class="pt-text">Minimizar</span>
+                    </button>
                 </div>
 
-                <div class="tabs" role="tablist" aria-label="Secciones de la ficha">
+                <div class="tabs" id="panelTabs" role="tablist" aria-label="Secciones de la ficha">
                     <button type="button" role="tab" id="tab-ficha" aria-controls="panel-ficha" aria-selected="true" data-tab="ficha">Ficha</button>
                     <button type="button" role="tab" id="tab-datos" aria-controls="panel-datos" aria-selected="false" data-tab="datos" tabindex="-1">Datos</button>
                     <button type="button" role="tab" id="tab-curiosidades" aria-controls="panel-curiosidades" aria-selected="false" data-tab="curiosidades" tabindex="-1">Curiosidades</button>
@@ -275,6 +282,6 @@
             }
         }
     </script>
-    <script type="module" src="js/main.js?v=1"></script>
+    <script type="module" src="js/main.js?v=3"></script>
 </body>
 </html>
